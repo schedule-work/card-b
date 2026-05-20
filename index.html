@@ -838,9 +838,9 @@ const payload = {
             );
         }
 
-                // React 18 UMD 버전에서는 ReactDOM이 아니라 ReactDOMClient를 사용해야 합니다.
-        const root = ReactDOMClient.createRoot(document.getElementById('root'));
-        root.render(<App />);
+                // UMD(CDN) 방식에서는 ReactDOM 객체를 그대로 사용합니다.
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
             </script>
 </body>
 </html>
