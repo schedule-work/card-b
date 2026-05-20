@@ -30,6 +30,10 @@
     .holiday-text { color: #ef4444; font-size: 0.7rem; font-weight: 500; margin-top: 2px; } /* 공휴일 명칭 */
     .holiday-day a { color: #ef4444 !important; } /* 공휴일 날짜 빨간색 */
     </style>
+
+    <!-- [추가] 탭 아이콘 및 모바일 즐겨찾기 아이콘 설정 -->
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon.png">
 </head>
 <body>
     <div id="root"></div>
@@ -303,22 +307,23 @@
             }, [events]);
 
             const confirmNotice = () => {
-                setShowNotice(false);
-                setDeptSelect('선택'); setDeptCustom(''); 
-                setBudgetSelect('선택'); setBudgetCustom(''); 
-                setPhone1Select('010'); setPhone1Custom('');
-                setPhone2(''); setPhone3('');
+    setShowNotice(false);
+    setDeptSelect('선택'); setDeptCustom(''); 
+    setBudgetSelect('선택'); setBudgetCustom(''); 
+    setPhone1Select('010'); setPhone1Custom('');
+    setPhone2(''); setPhone3('');
 
-                setFormData({
-                    id: '', name: user.name, empNo: user.empNo,
-                    startDate: '', 
-                    startTimePart: '', 
-                    endDate: '', 
-                    endTimePart: '', 
-                    purpose: '', details: ''
-                });
-                setShowForm(true);
-            };
+    setFormData({
+        id: '', name: user.name, empNo: user.empNo,
+        // [수정됨] 빈칸이 아니라, 사용자가 클릭한 selectedSlot.startDate를 가져옴
+        startDate: selectedSlot.startDate, 
+        startTimePart: '', 
+        endDate: '', // 반납일은 사용자가 직접 선택하게 둠
+        endTimePart: '', 
+        purpose: '', details: ''
+    });
+    setShowForm(true);
+};
 
             // [코드 위치: App 컴포넌트 내부 혹은 외부 (getHolidayName과 같은 위치)]
 // 1. 날짜 검증 함수
