@@ -839,9 +839,8 @@ const payload = {
             );
         }
 
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
-        root.render(<App />);
+        // 기존의 container, root 선언 2줄을 지우고 딱 이 코드만 넣으세요
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
