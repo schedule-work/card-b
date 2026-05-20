@@ -624,106 +624,97 @@
     setShowForm(true);
 };
 
-            // [코드 위치: App 컴포넌트 내부 혹은 외부 (getHolidayName과 같은 위치)]
-// 1. 날짜 검증 함수
-const isAvailableDate = (dateStr) => {
-    if (!dateStr) return false;
-    // 날짜를 로컬 기준으로 생성
-    const date = new Date(dateStr + "T00:00:00"); 
-    const day = date.getDay(); // 0:일요일, 6:토요일
-    
-    // 주말 체크 (0: 일요일, 6: 토요일은 예약 불가)
-    if (day === 0 || day === 6) return false;
-    
-    // 공휴일 체크 (기존에 정의된 getHolidayName 함수 활용)
-    if (getHolidayName(date)) return false;
-    
-    return true;
-};
+            // 1. 날짜 검증 함수 (주말, 공휴일 체크)
+            const isAvailableDate = (dateStr) => {
+                if (!dateStr) return false;
+                const date = new Date(dateStr + "T00:00:00"); 
+                const day = date.getDay(); // 0:일요일, 6:토요일
+                
+                if (day === 0 || day === 6) return false;
+                if (typeof getHolidayName === 'function' && getHolidayName(date)) return false;
+                
+                return true;
+            };
 
-// 2. handleSubmit 함수 (기존 내용 교체)
-const handleSubmit = async (e) => {
-    e.preventDefault();
+            // 2. 새로운 handleSubmit 함수 (제출 로직)
+            const handleSubmit = async (e) => {
+                e.preventDefault();
 
-    const finalDept = deptSelect === '직접 입력' ? deptCustom.trim() : deptSelect;
-    const finalBudget = budgetSelect === '기타' ? budgetCustom.trim() : budgetSelect;
-    const finalPhone1 = phone1Select === '기타' ? phone1Custom.trim() : phone1Select;
-    
-    // 기본 입력값 체크
-    if (deptSelect === '선택') return alert("대여 부서를 선택해주세요.");
-    if (budgetSelect === '선택') return alert("사용 예산 구분을 선택해주세요.");
-    if (!formData.startDate || !formData.startTimePart || !formData.endDate || !formData.endTimePart) {
-        return alert("대여/반납 예정일 및 시간을 모두 선택해주세요.");
-    }
+                const finalDept = deptSelect === '직접 입력' ? deptCustom.trim() : deptSelect;
+                const finalBudget = budgetSelect === '기타' ? budgetCustom.trim() : budgetSelect;
+                const finalPhone1 = phone1Select === '기타' ? phone1Custom.trim() : phone1Select;
+                
+                if (deptSelect === '선택') return alert("대여 부서를 선택해주세요.");
+                if (budgetSelect === '선택') return alert("사용 예산 구분을 선택해주세요.");
+                if (!formData.startDate || !formData.startTimePart || !formData.endDate || !formData.endTimePart) {
+                    return alert("대여/반납 예정일 및 시간을 모두 선택해주세요.");
+                }
 
-    // [중요] 날짜 평일/공휴일 검증
-    if (!isAvailableDate(formData.startDate)) return alert("대여 시작일은 주말 및 공휴일을 제외한 평일만 선택 가능합니다.");
-    if (!isAvailableDate(formData.endDate)) return alert("반납 예정일은 주말 및 공휴일을 제외한 평일만 선택 가능합니다.");
+                // 🚨 방금 위에서 만든 날짜 검증 함수를 여기서 사용합니다.
+                if (!isAvailableDate(formData.startDate)) return alert("대여 시작일은 주말 및 공휴일을 제외한 평일만 선택 가능합니다.");
+                if (!isAvailableDate(formData.endDate)) return alert("반납 예정일은 주말 및 공휴일을 제외한 평일만 선택 가능합니다.");
 
-    const combinedContact = `${finalPhone1}-${phone2.trim()}-${phone3.trim()}`;
-    
-    const newStart = new Date(`${formData.startDate}T${formData.startTimePart}:00`);
-    const newEnd = new Date(`${formData.endDate}T${formData.endTimePart}:00`);
+                const combinedContact = `${finalPhone1}-${phone2.trim()}-${phone3.trim()}`;
+                
+                const newStart = new Date(`${formData.startDate}T${formData.startTimePart}:00`);
+                const newEnd = new Date(`${formData.endDate}T${formData.endTimePart}:00`);
 
-    // 시간 순서 검증
-    if (newStart >= newEnd) {
-        alert("반납 예정시간은 대여 시작시간보다 나중이어야 합니다.");
-        return;
-    }
+                if (newStart >= newEnd) {
+                    alert("반납 예정시간은 대여 시작시간보다 나중이어야 합니다.");
+                    return;
+                }
 
-    // 7일 초과 장기 예약 차단
-    const diffTime = Math.abs(newEnd - newStart);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    if (diffDays > 7) {
-        alert("원활한 카드 사용을 위해 장기 예약은 최대 7일까지만 가능합니다.\n필요시 기간을 나누어 예약해 주시기 바랍니다.");
-        return;
-    }
+                const diffTime = Math.abs(newEnd - newStart);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                if (diffDays > 7) {
+                    alert("원활한 카드 사용을 위해 장기 예약은 최대 7일까지만 가능합니다.\n필요시 기간을 나누어 예약해 주시기 바랍니다.");
+                    return;
+                }
 
-    // 중복 예약 차단
-    const isOverlap = events.some(ev => {
-        if (formData.id && String(ev.id) === String(formData.id)) return false; 
-        const evStart = new Date(ev.start).getTime();
-        const evEnd = new Date(ev.end).getTime();
-        const reqStart = newStart.getTime();
-        const reqEnd = newEnd.getTime();
-        return (reqStart < evEnd) && (reqEnd > evStart);
-    });
+                const isOverlap = events.some(ev => {
+                    if (formData.id && String(ev.id) === String(formData.id)) return false; 
+                    const evStart = new Date(ev.start).getTime();
+                    const evEnd = new Date(ev.end).getTime();
+                    const reqStart = newStart.getTime();
+                    const reqEnd = newEnd.getTime();
+                    return (reqStart < evEnd) && (reqEnd > evStart);
+                });
 
-    if (isOverlap) {
-        alert("선택하신 시간에 이미 예약된 내역이 있습니다. 다른 시간을 선택해주세요.");
-        return;
-    }
+                if (isOverlap) {
+                    alert("선택하신 시간에 이미 예약된 내역이 있습니다. 다른 시간을 선택해주세요.");
+                    return;
+                }
 
-    setLoading(true);
-    const actionType = formData.id ? "UPDATE" : "CREATE";
-    
-    const payload = {
-        id: formData.id,
-        dept: finalDept,
-        name: formData.name,
-        empNo: formData.empNo,
-        startTime: `${formData.startDate}T${formData.startTimePart}:00`,
-        endTime: `${formData.endDate}T${formData.endTimePart}:00`,
-        budget: finalBudget,
-        purpose: formData.purpose,
-        details: formData.details,
-        contact: combinedContact
-    };
+                setLoading(true);
+                const actionType = formData.id ? "UPDATE" : "CREATE";
+                
+                const payload = {
+                    id: formData.id,
+                    dept: finalDept,
+                    name: formData.name,
+                    empNo: formData.empNo,
+                    startTime: `${formData.startDate}T${formData.startTimePart}:00`,
+                    endTime: `${formData.endDate}T${formData.endTimePart}:00`,
+                    budget: finalBudget,
+                    purpose: formData.purpose,
+                    details: formData.details,
+                    contact: combinedContact
+                };
 
-    try {
-        await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: actionType, ...payload })
-        });
-        alert(actionType === "CREATE" ? "예약이 완료되었습니다." : "예약이 수정되었습니다.");
-        setShowForm(false);
-        fetchBookings();
-    } catch (error) {
-        alert("서버 통신 중 오류가 발생했습니다.");
-    } finally {
-        setLoading(false);
-    }
-};
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: actionType, ...payload })
+                    });
+                    alert(actionType === "CREATE" ? "예약이 완료되었습니다." : "예약이 수정되었습니다.");
+                    setShowForm(false);
+                    fetchBookings();
+                } catch (error) {
+                    alert("서버 통신 중 오류가 발생했습니다.");
+                } finally {
+                    setLoading(false);
+                }
+            };
 
             const handleDelete = async () => {
                 if (!confirm("정말 이 예약을 취소하시겠습니까?")) return;
