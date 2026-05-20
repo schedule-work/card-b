@@ -670,8 +670,8 @@
     type="date" 
     disabled={!hasPermission} 
     required 
-    value={formData.endDate} 
-    onChange={e => setFormData({...formData, startDate: e.target.value})} 
+    value={formData.startDate} // endDate를 startDate로 수정
+    onChange={e => setFormData({...formData, startDate: e.target.value})} // setFormData({...formData, startDate: ...})로 수정
     className="w-full max-w-full px-3 py-2 min-h-[42px] rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" 
 />
                                                 <select disabled={!hasPermission} required value={formData.startTimePart} onChange={e => setFormData({...formData, startTimePart: e.target.value})} className="w-full min-w-0 max-w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors">
@@ -757,7 +757,8 @@
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+        // 스크립트 맨 아래 부분을 이렇게 바꾸세요
+window.addEventListener('DOMContentLoaded', () => {
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+});
