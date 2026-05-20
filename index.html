@@ -26,13 +26,19 @@
         // 구글 Apps Script 웹 앱 URL
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAhuFd-dWAUOtckSN2c_kThRSTELSf7K0C_BEtqtcklGnmUDRhZHz98eJkAAScWP4vBg/exec";
 
-        // 👉 요청하신 새로운 부서 리스트 목록 반영 (총 43개)
         const DEPARTMENTS = [
             "응급전용병동", "51병동", "52병동", "53병동", "60병동", "61병동", "62병동", "63병동", "65병동", "70병동", 
             "71병동", "72병동", "73병동", "80병동", "81병동", "82병동", "83병동", "85병동", "90병동", "91병동", 
             "92병동", "93병동", "95병동", "100병동", "101병동", "분만실", "내시경실", "심혈관센터", "암병원", "응급실", 
             "인공신장실", "1신경계중환자실", "2신경계중환자실", "내과중환자실", "마취통증의학과", "수술실", "신생아중환자실", 
             "심혈관계중환자실", "외과중환자실", "응급중환자실", "중앙공급실", "보호요원실", "간호교육기획팀"
+        ];
+
+        // 대여시간 제한 및 30분 단위 옵션 배열 생성
+        const TIME_OPTIONS = [
+            "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
+            "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", 
+            "15:30", "16:00", "16:30", "17:00", "17:30"
         ];
 
         function App() {
@@ -48,18 +54,25 @@
             const [selectedEvent, setSelectedEvent] = React.useState(null);
             const [selectedSlot, setSelectedSlot] = React.useState(null);
 
-            // UI 제어용 개별 로컬 상태 (부서 드롭다운 & 연락처 분할)
+            // 부서 제어
             const [deptSelect, setDeptSelect] = React.useState(DEPARTMENTS[0]);
             const [deptCustom, setDeptCustom] = React.useState('');
-            const [phone1, setPhone1] = React.useState('010');
+
+            // 예산 제어
+            const [budgetSelect, setBudgetSelect] = React.useState('간호부');
+            const [budgetCustom, setBudgetCustom] = React.useState('');
+
+            // 연락처 제어
+            const [phone1Select, setPhone1Select] = React.useState('010');
+            const [phone1Custom, setPhone1Custom] = React.useState('');
             const [phone2, setPhone2] = React.useState('');
             const [phone3, setPhone3] = React.useState('');
 
+            // 폼 데이터 (날짜와 시간을 별도 관리하여 UI에서 엄격히 분리)
             const [formData, setFormData] = React.useState({
-                id: '', dept: '', name: '', empNo: '', startTime: '', endTime: '', budget: '간호부', purpose: '', details: '', contact: ''
+                id: '', name: '', empNo: '', startDate: '', startTimePart: '09:00', endDate: '', endTimePart: '10:00', purpose: '', details: ''
             });
 
-            // 달력 범위 제어 (시작점: 2026년 5월 1일 / 끝점: 오늘 기준 2달 후)
             const startRangeStr = "2026-05-01";
             const maxDate = new Date();
             maxDate.setMonth(maxDate.getMonth() + 2);
@@ -76,7 +89,7 @@
                         start: b.startTime,
                         end: b.endTime,
                         extendedProps: { ...b },
-                        backgroundColor: b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === '적정진료관리팀' ? '#f59e0b' : '#64748b',
+                        backgroundColor: b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : '#64748b',
                         borderColor: 'transparent'
                     }));
                     setEvents(formattedEvents);
@@ -101,7 +114,6 @@
 
             React.useEffect(() => { if (user) fetchBookings(); }, [user]);
 
-            // 캘린더 빌드 로직 (월간 뷰 베이스)
             React.useEffect(() => {
                 if (!user) return;
 
@@ -117,27 +129,23 @@
                             center: 'title',
                             right: 'dayGridMonth,timeGridWeek,timeGridDay'
                         },
-                        slotMinTime: '07:00:00',
-                        slotMaxTime: '22:00:00',
+                        slotMinTime: '08:30:00',
+                        slotMaxTime: '18:00:00',
                         allDaySlot: false,
-                        validRange: {
-                            start: startRangeStr,
-                            end: maxDateStr
-                        },
+                        validRange: { start: startRangeStr, end: maxDateStr },
                         selectable: true,
                         select: function(info) {
-                            let startT = info.startStr;
-                            let endT = info.endStr;
+                            let sDate = info.startStr.split('T')[0];
+                            let eDate = info.endStr.split('T')[0];
                             
-                            if (startT.length === 10) { 
-                                startT = `${startT}T09:00`;
-                                endT = `${info.startStr}T10:00`; 
-                            } else {
-                                startT = startT.slice(0,16);
-                                endT = endT.slice(0,16);
+                            // 월간 뷰 클릭 등 종일 범위로 넘어올 때 마지막 날짜 보정
+                            if (info.startStr.length === 10) {
+                                const eObj = new Date(info.endStr);
+                                eObj.setDate(eObj.getDate() - 1);
+                                eDate = eObj.toISOString().split('T')[0];
                             }
 
-                            setSelectedSlot({ start: startT, end: endT });
+                            setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
                             setSelectedEvent(null);
                             setShowNotice(true);
                         },
@@ -145,7 +153,7 @@
                             const props = info.event.extendedProps;
                             setSelectedEvent(props);
                             
-                            // 부서 매핑 설정
+                            // 1. 부서 세팅
                             if (DEPARTMENTS.includes(props.dept)) {
                                 setDeptSelect(props.dept);
                                 setDeptCustom('');
@@ -154,16 +162,36 @@
                                 setDeptCustom(props.dept);
                             }
 
-                            // 연락처 파싱 (010-1234-5678 형식을 3개 칸에 분배)
+                            // 2. 예산 세팅
+                            if (['간호부', 'QI(적정진료관리팀)', '총무팀'].includes(props.budget)) {
+                                setBudgetSelect(props.budget);
+                                setBudgetCustom('');
+                            } else {
+                                setBudgetSelect('기타');
+                                setBudgetCustom(props.budget || '');
+                            }
+
+                            // 3. 연락처 세팅
                             const pParts = (props.contact || '').split('-');
-                            setPhone1(pParts[0] || '010');
+                            if (['010', '011', '016'].includes(pParts[0])) {
+                                setPhone1Select(pParts[0] || '010');
+                                setPhone1Custom('');
+                            } else {
+                                setPhone1Select('기타');
+                                setPhone1Custom(pParts[0] || '');
+                            }
                             setPhone2(pParts[1] || '');
                             setPhone3(pParts[2] || '');
 
+                            // 4. 날짜 및 시간 분리 세팅
+                            const sDt = props.startTime.split('T');
+                            const eDt = props.endTime.split('T');
+
                             setFormData({
-                                id: props.id, dept: props.dept, name: props.name, empNo: props.empNo,
-                                startTime: props.startTime, endTime: props.endTime, budget: props.budget,
-                                purpose: props.purpose, details: props.details, contact: props.contact
+                                id: props.id, name: props.name, empNo: props.empNo,
+                                startDate: sDt[0], startTimePart: sDt[1].substring(0,5),
+                                endDate: eDt[0], endTimePart: eDt[1].substring(0,5),
+                                purpose: props.purpose, details: props.details
                             });
                             setShowForm(true);
                         }
@@ -191,58 +219,54 @@
 
             const confirmNotice = () => {
                 setShowNotice(false);
-                setDeptSelect(DEPARTMENTS[0]);
-                setDeptCustom('');
-                setPhone1('010');
-                setPhone2('');
-                setPhone3('');
+                setDeptSelect(DEPARTMENTS[0]); setDeptCustom('');
+                setBudgetSelect('간호부'); setBudgetCustom('');
+                setPhone1Select('010'); setPhone1Custom('');
+                setPhone2(''); setPhone3('');
 
                 setFormData({
-                    id: '', dept: DEPARTMENTS[0], name: user.name, empNo: user.empNo,
-                    startTime: selectedSlot.start, endTime: selectedSlot.end,
-                    budget: '간호부', purpose: '', details: '', contact: ''
+                    id: '', name: user.name, empNo: user.empNo,
+                    startDate: selectedSlot.startDate, startTimePart: selectedSlot.startTimePart,
+                    endDate: selectedSlot.endDate, endTimePart: selectedSlot.endTimePart,
+                    purpose: '', details: ''
                 });
                 setShowForm(true);
-            };
-
-            // 시간 유효성 검사 (08:30 ~ 17:30 및 30분 단위)
-            const validateTimeBounds = (dtStr) => {
-                if (!dtStr) return false;
-                const timePart = dtStr.split('T')[1];
-                if (!timePart) return false;
-                const [hh, mm] = timePart.split(':').map(Number);
-                const totalMinutes = hh * 60 + mm;
-                
-                const minLimit = 8 * 60 + 30;  // 08:30
-                const maxLimit = 17 * 60 + 30; // 17:30
-
-                if (mm !== 0 && mm !== 30) return false; 
-                return totalMinutes >= minLimit && totalMinutes <= maxLimit;
             };
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
 
-                if (!validateTimeBounds(formData.startTime) || !validateTimeBounds(formData.endTime)) {
-                    alert("대여 시간과 반납 시간은 08:30부터 17:30 사이로만 설정 가능하며, 30분 단위(예: 09:00, 09:30)로 맞추어 선택해야 합니다.");
-                    return;
-                }
-
-                if (new Date(formData.startTime) >= new Date(formData.endTime)) {
-                    alert("반납 시간은 대여 시작 시간보다 나중이어야 합니다.");
-                    return;
-                }
-
+                // 1. 필수 입력값 결합 처리
                 const finalDept = deptSelect === '직접 입력' ? deptCustom.trim() : deptSelect;
-                if (!finalDept) {
-                    alert("부서명을 올바르게 입력하거나 선택해주세요.");
+                const finalBudget = budgetSelect === '기타' ? budgetCustom.trim() : budgetSelect;
+                const finalPhone1 = phone1Select === '기타' ? phone1Custom.trim() : phone1Select;
+                
+                if (!finalDept) return alert("부서명을 올바르게 입력해주세요.");
+                if (!finalBudget) return alert("예산 구분을 올바르게 입력해주세요.");
+                if (!finalPhone1 || !phone2 || !phone3) return alert("연락처를 모두 입력해주세요.");
+
+                const combinedContact = `${finalPhone1}-${phone2.trim()}-${phone3.trim()}`;
+                
+                const newStart = new Date(`${formData.startDate}T${formData.startTimePart}:00`);
+                const newEnd = new Date(`${formData.endDate}T${formData.endTimePart}:00`);
+
+                // 2. 시간 순서 검증
+                if (newStart >= newEnd) {
+                    alert("반납 예정시간은 대여 시작시간보다 나중이어야 합니다.");
                     return;
                 }
 
-                const combinedContact = `${phone1}-${phone2.trim()}-${phone3.trim()}`;
-                const phoneRegex = /^010-\d{3,4}-\d{4}$/;
-                if (!phoneRegex.test(combinedContact)) {
-                    alert("연락처 항목을 모두 올바르게 채워주세요. (본인인증 형식 형태의 숫자만 허용)");
+                // 3. 중복(겹침) 예약 차단 로직 (내 예약 갱신일 경우는 본인 것은 제외하고 체크)
+                const isOverlap = events.some(ev => {
+                    if (formData.id && ev.id === formData.id) return false; 
+                    const evStart = new Date(ev.start);
+                    const evEnd = new Date(ev.end);
+                    // 겹치는 조건: 내 시작시간이 상대방 종료시간보다 빠르고, 내 종료시간이 상대방 시작시간보다 늦을 때
+                    return newStart < evEnd && newEnd > evStart;
+                });
+
+                if (isOverlap) {
+                    alert("선택하신 시간에 이미 예약된 내역이 있습니다. 다른 시간을 선택해주세요.");
                     return;
                 }
 
@@ -250,8 +274,15 @@
                 const actionType = formData.id ? "UPDATE" : "CREATE";
                 
                 const payload = {
-                    ...formData,
+                    id: formData.id,
                     dept: finalDept,
+                    name: formData.name,
+                    empNo: formData.empNo,
+                    startTime: `${formData.startDate}T${formData.startTimePart}:00`,
+                    endTime: `${formData.endDate}T${formData.endTimePart}:00`,
+                    budget: finalBudget,
+                    purpose: formData.purpose,
+                    details: formData.details,
                     contact: combinedContact
                 };
 
@@ -331,7 +362,7 @@
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 min-h-[600px] relative">
                             {loading && (
                                 <div className="absolute top-4 right-6 text-xs font-semibold text-blue-600 animate-pulse bg-blue-50 px-3 py-1.5 rounded-full z-20">
-                                    구글 시트 동기화 중...
+                                    동기화 중...
                                 </div>
                             )}
                             <div id="calendar"></div>
@@ -340,12 +371,17 @@
 
                     {showNotice && (
                         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-100">
-                                <h3 className="text-lg font-bold text-slate-900 mb-3">법인카드 대여 사전 유의사항</h3>
-                                <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-600 leading-relaxed mb-6 space-y-2">
-                                    <p>• 법인카드는 승인된 목적 외 사용이 엄격히 제한됩니다.</p>
-                                    <p>• 사용 후 즉시 반납 및 구글 대장 정리를 완료해 주십시오.</p>
-                                    <p className="font-semibold text-blue-600">• (추후 수정될 상세 팝업 문구 안내 영역)</p>
+                            <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl p-6 border border-slate-100">
+                                <h3 className="text-lg font-bold text-slate-900 mb-4">법인카드 대여 사전 유의사항</h3>
+                                <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-600 leading-relaxed mb-6 space-y-3">
+                                    <p>• 법인카드 결제 영수증은 A4 용지에 부착하여 간호부 사무실로 제출하여 주시기 바랍니다. (법인카드 뒷자리 4자리 기입 필수, 사용 부서 및 용도, 거래내역 표기 필수)</p>
+                                    <p>• 결제 영수증은 사용월 기준 익월 10일까지 제출 필수</p>
+                                    <div>
+                                        <p className="font-semibold text-red-600 mb-1">• 법인카드 사용 제한 항목</p>
+                                        <p className="pl-2">- 백화점 상품권, 주유 상품권, 문화(도서)상품권 및 기타 상품권 등</p>
+                                        <p className="pl-2">- 선불카드 및 전자상품권(기프트카드 등) 구매 및 충전</p>
+                                        <p className="pl-2">- 선물세트 구입 (구매내역 상 '선물세트' 포함 시에도 해당)</p>
+                                    </div>
                                 </div>
                                 <div className="flex space-x-3">
                                     <button onClick={() => setShowNotice(false)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-3 rounded-xl transition text-sm">취소</button>
@@ -373,18 +409,21 @@
                                             <option value="직접 입력">직접 입력</option>
                                         </select>
                                         {deptSelect === '직접 입력' && (
-                                            <input type="text" disabled={!hasPermission} required value={deptCustom} onChange={e => setDeptCustom(e.target.value)} className="w-full mt-2 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-600 disabled:bg-slate-50" placeholder="부서명을 직접 수동 입력하세요." />
+                                            <input type="text" disabled={!hasPermission} required value={deptCustom} onChange={e => setDeptCustom(e.target.value)} className="w-full mt-2 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-600 disabled:bg-slate-50" placeholder="정확한 부서명으로 기입" />
                                         )}
                                     </div>
 
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 mb-1">사용 예산 구분</label>
-                                        <select disabled={!hasPermission} value={formData.budget} onChange={e => setFormData({...formData, budget: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm disabled:bg-slate-50">
+                                        <select disabled={!hasPermission} value={budgetSelect} onChange={e => setBudgetSelect(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm disabled:bg-slate-50 focus:outline-none focus:border-blue-600">
                                             <option value="간호부">간호부</option>
+                                            <option value="QI(적정진료관리팀)">QI(적정진료관리팀)</option>
                                             <option value="총무팀">총무팀</option>
-                                            <option value="적정진료관리팀">적정진료관리팀</option>
                                             <option value="기타">기타</option>
                                         </select>
+                                        {budgetSelect === '기타' && (
+                                            <input type="text" disabled={!hasPermission} required value={budgetCustom} onChange={e => setBudgetCustom(e.target.value)} className="w-full mt-2 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-600 disabled:bg-slate-50" placeholder="정확한 예산명(부서명)으로 기입" />
+                                        )}
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
@@ -400,12 +439,22 @@
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-500 mb-1">대여 시작시간 (08:30~17:30)</label>
-                                            <input type="datetime-local" step="1800" disabled={!hasPermission} required value={formData.startTime} onChange={e => setFormData({...formData, startTime: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm disabled:bg-slate-50" />
+                                            <label className="block text-xs font-semibold text-slate-500 mb-1">대여 시작일 및 시간</label>
+                                            <div className="flex flex-col space-y-2">
+                                                <input type="date" disabled={!hasPermission} required value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-600 disabled:bg-slate-50" />
+                                                <select disabled={!hasPermission} required value={formData.startTimePart} onChange={e => setFormData({...formData, startTimePart: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-600 disabled:bg-slate-50 bg-white">
+                                                    {TIME_OPTIONS.map(time => <option key={`start-${time}`} value={time}>{time}</option>)}
+                                                </select>
+                                            </div>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-500 mb-1">반납 예정시간 (08:30~17:30)</label>
-                                            <input type="datetime-local" step="1800" disabled={!hasPermission} required value={formData.endTime} onChange={e => setFormData({...formData, endTime: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm disabled:bg-slate-50" />
+                                            <label className="block text-xs font-semibold text-slate-500 mb-1">반납 예정일 및 시간</label>
+                                            <div className="flex flex-col space-y-2">
+                                                <input type="date" disabled={!hasPermission} required value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-600 disabled:bg-slate-50" />
+                                                <select disabled={!hasPermission} required value={formData.endTimePart} onChange={e => setFormData({...formData, endTimePart: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-600 disabled:bg-slate-50 bg-white">
+                                                    {TIME_OPTIONS.map(time => <option key={`end-${time}`} value={time}>{time}</option>)}
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -421,17 +470,21 @@
 
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 mb-1">연락처 (휴대폰 번호)</label>
-                                        <div className="flex items-center space-x-2">
-                                            <select disabled={!hasPermission} value={phone1} onChange={e => setPhone1(e.target.value)} className="w-24 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-600 disabled:bg-slate-50">
+                                        <div className="flex items-center space-x-2 mb-2">
+                                            <select disabled={!hasPermission} value={phone1Select} onChange={e => setPhone1Select(e.target.value)} className="w-24 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-600 disabled:bg-slate-50 bg-white">
                                                 <option value="010">010</option>
                                                 <option value="011">011</option>
                                                 <option value="016">016</option>
+                                                <option value="기타">기타(직접입력)</option>
                                             </select>
                                             <span className="text-slate-400">-</span>
                                             <input type="text" disabled={!hasPermission} required maxLength="4" value={phone2} onChange={e => setPhone2(e.target.value.replace(/[^0-9]/g, ''))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm text-center focus:outline-none focus:border-blue-600 disabled:bg-slate-50" placeholder="1111" />
                                             <span className="text-slate-400">-</span>
                                             <input type="text" disabled={!hasPermission} required maxLength="4" value={phone3} onChange={e => setPhone3(e.target.value.replace(/[^0-9]/g, ''))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm text-center focus:outline-none focus:border-blue-600 disabled:bg-slate-50" placeholder="2222" />
                                         </div>
+                                        {phone1Select === '기타' && (
+                                            <input type="text" disabled={!hasPermission} required value={phone1Custom} onChange={e => setPhone1Custom(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-600 disabled:bg-slate-50" placeholder="앞자리 통신망 번호를 직접 입력하세요. (예: 0507)" />
+                                        )}
                                     </div>
 
                                     <div className="flex space-x-2 pt-4 border-t border-slate-100">
