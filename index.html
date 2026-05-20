@@ -215,8 +215,26 @@
                         allDaySlot: false,
                         slotMinTime: '08:30:00',
                         slotMaxTime: '17:30:00',
-                        validRange: { start: startRangeStr, end: maxDateStr },
+                        // 1. 기존 validRange를 2026-05-01 고정으로 변경 (과거 조회용)
+    validRange: { start: '2026-05-01' },
 
+    // 2. 접속 시점 기준 2개월 이내만 예약 가능하도록 제한하는 로직 추가
+    selectAllow: function(selectInfo) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // 오늘 날짜 정각 기준
+        
+        const maxSelectDate = new Date();
+        maxSelectDate.setHours(0, 0, 0, 0);
+        maxSelectDate.setMonth(maxSelectDate.getMonth() + 2); // 오늘 기준 딱 2개월 뒤
+        
+        const selectStart = new Date(selectInfo.startStr + "T00:00:00");
+        
+        // 오늘보다 과거이거나, 2개월 뒤를 초과한 미래인 경우 선택 차단
+        if (selectStart < today || selectStart > maxSelectDate) {
+            return false; 
+        }
+        return true; // 범위 안의 날짜만 드래그/클릭 허용
+    },
                         headerToolbar: {
                             left: 'prev,next today',
                             center: 'title',
