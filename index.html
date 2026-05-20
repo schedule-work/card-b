@@ -262,21 +262,28 @@
                                 setPhone1Select('기타'); setPhone1Custom(pParts[0] || '');
                             }
                             setPhone2(pParts[1] || ''); setPhone3(pParts[2] || '');
-                            setFormData({ 
-    id: props.id, 
-    name: props.name, 
-    empNo: props.empNo, 
-    // substring(0, 10)은 문자열의 앞 10자리(YYYY-MM-DD)를 가져옵니다.
-    startDate: props.startTime.substring(0, 10), 
-    // substring(11, 16)은 문자열의 11~15번째 자리(HH:mm)를 가져옵니다.
-    startTimePart: props.startTime.substring(11, 16), 
-    endDate: props.endTime.substring(0, 10), 
-    endTimePart: props.endTime.substring(11, 16), 
-    purpose: props.purpose, 
-    details: props.details 
-});
-                            setShowForm(true);
-                        }
+                            const startDate = new Date(props.startTime);
+    const endDate = new Date(props.endTime);
+
+    // YYYY-MM-DD 포맷 변환
+    const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    // HH:mm 포맷 변환
+    const toTimeStr = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+
+    setFormData({ 
+        id: props.id, 
+        name: props.name, 
+        empNo: props.empNo, 
+        startDate: toDateStr(startDate), 
+        startTimePart: toTimeStr(startDate), 
+        endDate: toDateStr(endDate), 
+        endTimePart: toTimeStr(endDate), 
+        purpose: props.purpose, 
+        details: props.details 
+    });
+    
+    setShowForm(true);
+}
                     });
 
                     calendar.render();
