@@ -9,9 +9,10 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <!-- FullCalendar 한국어 언어팩 -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/ko.global.min.js"></script>
     
-    <!-- [수정됨] date-holidays 라이브러리 CDN (가장 안정적인 링크로 교체) -->
+    <!-- date-holidays 라이브러리 CDN -->
     <script src="https://unpkg.com/date-holidays/dist/date-holidays.min.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -28,7 +29,7 @@
     .fc-day-sun a { color: #ef4444 !important; text-decoration: none; } /* 일요일 빨간색 */
     .fc-day-sat a { color: #3b82f6 !important; text-decoration: none; } /* 토요일 파란색 */
     .holiday-text { color: #ef4444; font-size: 0.7rem; font-weight: 500; margin-top: 2px; } 
-    .holiday-day a { color: #ef4444 !important; } 
+    .holiday-day a { color: #ef4444 !important; } /* 공휴일 날짜 빨간색 강제 적용 */
     </style>
 </head>
 <body>
@@ -37,14 +38,12 @@
     <script type="text/babel">
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAhuFd-dWAUOtckSN2c_kThRSTELSf7K0C_BEtqtcklGnmUDRhZHz98eJkAAScWP4vBg/exec";
 
-        // [수정됨] 화면이 멈추지 않도록 안전하게 공휴일 라이브러리 초기화
+        // date-holidays 객체 생성 및 한국(KR) 설정
         let hd = null;
         try {
             if (window.DateHolidays) {
                 hd = new window.DateHolidays('KR');
                 hd.setLanguages(['ko']);
-            } else {
-                console.warn("date-holidays 라이브러리를 찾을 수 없습니다.");
             }
         } catch (error) {
             console.error("공휴일 로직 초기화 중 오류 발생:", error);
@@ -93,8 +92,7 @@
             });
 
             // 예약 가능 범위: 오늘 ~ 2개월 뒤
-            const today = new Date();
-            const startRangeStr = today.toISOString().split('T')[0];
+            const startRangeStr = "2026-05-01";
             const maxDate = new Date();
             maxDate.setMonth(maxDate.getMonth() + 2);
             const maxDateStr = maxDate.toISOString().split('T')[0];
@@ -143,12 +141,13 @@
                     if (!calendarEl || calendarInstanceRef.current) return;
 
                     const calendar = new FullCalendar.Calendar(calendarEl, {
-                        locale: 'ko', 
+                        locale: 'ko',
+                        initialDate: '2026-05-01', // 무조건 2026년 5월부터 달력이 시작되도록 강제 설정
                         
                         dayCellClassNames: function(arg) {
                             if (!hd) return [];
                             const res = hd.isHoliday(arg.date);
-                            // 한국의 법정공휴일(public)인 경우에만 빨간색 적용
+                            // 법정공휴일(public) 또는 은행휴일(bank)인 경우 빨간색 클래스 부여
                             if (res && Array.isArray(res) && res.some(h => h.type === 'public' || h.type === 'bank')) {
                                 return ['holiday-day'];
                             }
@@ -157,7 +156,6 @@
 
                         dayCellContent: function(arg) {
                             const dayNumber = arg.dayNumberText.replace('일', '');
-                            
                             if (!hd) return { html: `<span>${dayNumber}</span>` };
                             
                             const res = hd.isHoliday(arg.date);
@@ -328,6 +326,7 @@
                     return;
                 }
 
+                // 7일 초과 장기 예약 차단 로직
                 const diffTime = Math.abs(newEnd - newStart);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
                 if (diffDays > 7) {
