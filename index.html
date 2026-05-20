@@ -449,7 +449,8 @@
                 }
             };
 
-            const hasPermission = React.useMemo(() => {
+                        const hasPermission = React.useMemo(() => {
+                if (!user) return false; // [추가됨] 로그아웃 상태일 때 에러 방지 안전장치
                 if (!selectedEvent) return true; 
                 if (user.isAdmin) return true;
                 const eventEmpNo = String(selectedEvent.empNo || "").trim();
@@ -494,7 +495,13 @@
                                 <span>🔄 새로고침</span>
                             </button>
                             
-                            <button onClick={() => setUser(null)} className="text-blue-600 hover:underline">로그아웃</button>
+                            <button onClick={() => { 
+    setUser(null); 
+    setSelectedEvent(null); 
+    setShowForm(false); 
+    setShowListModal(false); 
+    setShowNotice(false);
+}} className="text-blue-600 hover:underline">로그아웃</button>
                         </div>
                     </header>
 
