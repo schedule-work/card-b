@@ -240,8 +240,25 @@
                             setSelectedSlot({ startDate: sDate, endDate: eDate });
 
                             if (window.innerWidth < 640) {
-                                // events가 아닌 최신 eventsRef.current를 사용
-                                const dayEvents = eventsRef.current.filter(ev => ev.start.split('T')[0] === sDate);
+                                // [수정] 달력에 이미 정확한 시간으로 그려진 이벤트들을 직접 가져옵니다.
+                                const allFcEvents = info.view.calendar.getEvents();
+                                const clickedTime = new Date(sDate + "T00:00:00").getTime();
+                                const nextDayTime = clickedTime + (24 * 60 * 60 * 1000);
+
+                                const dayEvents = allFcEvents.filter(ev => {
+                                    if (!ev.start || !ev.end) return false;
+                                    const evStart = ev.start.getTime();
+                                    const evEnd = ev.end.getTime();
+                                    // 클릭한 날짜와 시간이 겹치는지 완벽하게 계산
+                                    return (evStart < nextDayTime) && (evEnd > clickedTime);
+                                }).map(ev => ({
+                                    id: ev.id,
+                                    title: ev.title,
+                                    startObj: ev.start, // 캘린더의 완벽한 Date 객체 유지
+                                    endObj: ev.end,
+                                    extendedProps: ev.extendedProps
+                                }));
+                                
                                 setSelectedDateReservations(dayEvents);
                                 setShowListModal(true); 
                             } else {
@@ -513,19 +530,14 @@
                             <h3 className="font-bold mb-4">{selectedSlot?.startDate} 예약 목록</h3>
                             {selectedDateReservations.length > 0 ? (
                                 selectedDateReservations.map(ev => {
-                                    const startObj = new Date(ev.start);
-                                    const endObj = new Date(ev.end);
-                                    
-                                    // 시간 포맷팅 함수 (예: 09:30)
+                                    // 안전한 시간 및 날짜 포맷팅
                                     const formatTime = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-                                    // 날짜 포맷팅 함수 (예: 05/18)
                                     const formatDate = (d) => String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
                                     
-                                    // 당일 예약인지 다일 예약인지에 따라 표시 형식 다르게 처리
-                                    const isSameDay = startObj.toDateString() === endObj.toDateString();
+                                    const isSameDay = ev.startObj.toDateString() === ev.endObj.toDateString();
                                     const timeDisplay = isSameDay 
-                                        ? `${formatTime(startObj)} ~ ${formatTime(endObj)}`
-                                        : `${formatDate(startObj)} ${formatTime(startObj)} ~ ${formatDate(endObj)} ${formatTime(endObj)}`;
+                                        ? `${formatTime(ev.startObj)} ~ ${formatTime(ev.endObj)}`
+                                        : `${formatDate(ev.startObj)} ${formatTime(ev.startObj)} ~ ${formatDate(ev.endObj)} ${formatTime(ev.endObj)}`;
 
                                     return (
                                         <div key={ev.id} onClick={() => { setSelectedEvent(ev.extendedProps); setShowListModal(false); setShowForm(true); }} className="p-3 border-b hover:bg-slate-50 cursor-pointer text-sm flex flex-col gap-1">
