@@ -351,11 +351,22 @@
                     return;
                 }
 
+                // [강화된 중복(겹침) 예약 차단 로직]
                 const isOverlap = events.some(ev => {
-                    if (formData.id && ev.id === formData.id) return false; 
-                    const evStart = new Date(ev.start);
-                    const evEnd = new Date(ev.end);
-                    return newStart < evEnd && newEnd > evStart;
+                    // 본인의 예약을 수정하는 경우, 자기 자신의 기존 스케줄은 중복 검사에서 제외
+                    if (formData.id && String(ev.id) === String(formData.id)) {
+                        return false; 
+                    }
+                    
+                    const evStart = new Date(ev.start).getTime();
+                    const evEnd = new Date(ev.end).getTime();
+                    const reqStart = newStart.getTime();
+                    const reqEnd = newEnd.getTime();
+
+                    // 엄격한 시간 교차 검증 (겹치는 조건)
+                    // 1. 요청 시작 시간이 기존 예약의 종료 시간보다 전이고,
+                    // 2. 요청 종료 시간이 기존 예약의 시작 시간보다 후이면 완벽하게 겹침
+                    return (reqStart < evEnd) && (reqEnd > evStart);
                 });
 
                 if (isOverlap) {
