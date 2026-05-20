@@ -228,12 +228,17 @@
         
         const selectStart = new Date(selectInfo.startStr + "T00:00:00");
         
-        // [조건 체크] 과거 날짜이거나 2개월을 초과한 경우
-        if (selectStart < today || selectStart > maxSelectDate) {
-            // 유저에게 알림창 띄우기
-            alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
-            return false; // 선택 차단
-        }
+        // [조건 1] 과거 날짜인 경우
+if (selectStart < today) {
+    alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
+    return false;
+}
+
+// [조건 2] 2개월을 초과한 경우
+if (selectStart > maxSelectDate) {
+    alert("⚠️ 예약은 오늘부터 2개월 이내의 날짜만 신청 가능합니다.");
+    return false;
+}
         return true; // 허용
     },
                         headerToolbar: {
@@ -631,10 +636,26 @@ const payload = {
                             ) : (
                                 <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-4">예약된 내역이 없습니다.</p>
                             )}
-                            <button onClick={() => { setSelectedEvent(null); setShowListModal(false); setShowNotice(true); }} className="w-full mt-4 bg-blue-700 hover:bg-blue-800 text-white p-3 rounded-xl shadow-md font-medium transition text-sm">
-                                + 신규 예약 신청하기
-                            </button>
-                        </div>
+                            // 기존의 <button onClick={...}>+ 신규 예약 신청하기</button> 부분을 삭제하고 아래로 교체하세요
+
+<div className="flex gap-2 mt-4">
+    <button 
+        onClick={() => setShowListModal(false)} 
+        className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 py-3 rounded-xl font-medium transition text-sm"
+    >
+        Back
+    </button>
+    <button 
+        onClick={() => { 
+            setSelectedEvent(null); 
+            setShowListModal(false); 
+            setShowNotice(true); 
+        }} 
+        className="flex-[2] bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl shadow-md font-medium transition text-sm"
+    >
+        + 신규 예약
+    </button>
+</div>
                     </div>
                     )}
                     
