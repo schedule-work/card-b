@@ -11,8 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/ko.global.min.js"></script>
     
-    <!-- [추가됨] date-holidays 라이브러리 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/date-holidays/dist/umd.min.js"></script>
+    <!-- [수정됨] date-holidays 라이브러리 CDN (가장 안정적인 링크로 교체) -->
+    <script src="https://unpkg.com/date-holidays/dist/date-holidays.min.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -27,21 +27,28 @@
     /* 주말 및 공휴일 색상 스타일 */
     .fc-day-sun a { color: #ef4444 !important; text-decoration: none; } /* 일요일 빨간색 */
     .fc-day-sat a { color: #3b82f6 !important; text-decoration: none; } /* 토요일 파란색 */
-    .holiday-text { color: #ef4444; font-size: 0.7rem; font-weight: 500; margin-top: 2px; } /* 공휴일 텍스트 */
-    .holiday-day a { color: #ef4444 !important; } /* 공휴일 날짜 빨간색 강제 적용 */
+    .holiday-text { color: #ef4444; font-size: 0.7rem; font-weight: 500; margin-top: 2px; } 
+    .holiday-day a { color: #ef4444 !important; } 
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        // 구글 Apps Script 웹 앱 URL
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAhuFd-dWAUOtckSN2c_kThRSTELSf7K0C_BEtqtcklGnmUDRhZHz98eJkAAScWP4vBg/exec";
 
-        // [추가됨] date-holidays 객체 생성 및 한국(KR) 설정
-        const Holidays = window.Holidays || window.Holiday;
-        const hd = new Holidays('KR');
-        hd.setLanguages(['ko']); // 공휴일 이름을 한국어로 출력하도록 설정
+        // [수정됨] 화면이 멈추지 않도록 안전하게 공휴일 라이브러리 초기화
+        let hd = null;
+        try {
+            if (window.DateHolidays) {
+                hd = new window.DateHolidays('KR');
+                hd.setLanguages(['ko']);
+            } else {
+                console.warn("date-holidays 라이브러리를 찾을 수 없습니다.");
+            }
+        } catch (error) {
+            console.error("공휴일 로직 초기화 중 오류 발생:", error);
+        }
 
         const DEPARTMENTS = [
             "응급전용병동", "51병동", "52병동", "53병동", "60병동", "61병동", "62병동", "63병동", "65병동", "70병동", 
@@ -85,7 +92,7 @@
                 id: '', name: '', empNo: '', startDate: '', startTimePart: '', endDate: '', endTimePart: '', purpose: '', details: ''
             });
 
-            // 예약 가능 범위 설정
+            // 예약 가능 범위: 오늘 ~ 2개월 뒤
             const today = new Date();
             const startRangeStr = today.toISOString().split('T')[0];
             const maxDate = new Date();
@@ -138,38 +145,35 @@
                     const calendar = new FullCalendar.Calendar(calendarEl, {
                         locale: 'ko', 
                         
-                        // [추가됨] 달력 날짜 칸 클래스 동적 부여 (공휴일을 빨간색으로)
                         dayCellClassNames: function(arg) {
+                            if (!hd) return [];
                             const res = hd.isHoliday(arg.date);
-                            // 한국의 'public' (법정공휴일) 타입일 경우에만 빨간색 처리
-                            if (res && res.some(h => h.type === 'public' || h.type === 'bank')) {
+                            // 한국의 법정공휴일(public)인 경우에만 빨간색 적용
+                            if (res && Array.isArray(res) && res.some(h => h.type === 'public' || h.type === 'bank')) {
                                 return ['holiday-day'];
                             }
                             return [];
                         },
 
-                        // [추가됨] 달력 날짜에 공휴일 텍스트 표시
                         dayCellContent: function(arg) {
-                            const res = hd.isHoliday(arg.date);
-                            const publicHoliday = res ? res.find(h => h.type === 'public' || h.type === 'bank') : null;
-                            
                             const dayNumber = arg.dayNumberText.replace('일', '');
-
-                            if (publicHoliday) {
-                                // 월간 뷰(dayGridMonth)에서만 공휴일 이름 표시
-                                if (arg.view.type === 'dayGridMonth') {
-                                    return { 
-                                        html: `<div class="flex flex-col items-center">
-                                                <span>${dayNumber}</span>
-                                                <span class="holiday-text leading-tight mt-1 truncate w-full text-center" title="${publicHoliday.name}">${publicHoliday.name}</span>
-                                               </div>` 
-                                    };
-                                }
+                            
+                            if (!hd) return { html: `<span>${dayNumber}</span>` };
+                            
+                            const res = hd.isHoliday(arg.date);
+                            const publicHoliday = res && Array.isArray(res) ? res.find(h => h.type === 'public' || h.type === 'bank') : null;
+                            
+                            if (publicHoliday && arg.view.type === 'dayGridMonth') {
+                                return { 
+                                    html: `<div class="flex flex-col items-center">
+                                            <span>${dayNumber}</span>
+                                            <span class="holiday-text leading-tight mt-1 truncate w-full text-center" title="${publicHoliday.name}">${publicHoliday.name}</span>
+                                           </div>` 
+                                };
                             }
                             return { html: `<span>${dayNumber}</span>` };
                         },
 
-                        // 이벤트(예약) 시간 표기 로직 (9A30, 9A)
                         eventContent: function(arg) {
                             const start = new Date(arg.event.start);
                             const end = new Date(arg.event.end);
