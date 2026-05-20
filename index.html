@@ -498,7 +498,7 @@ const hasPermission = React.useMemo(() => {
                                 <span>🔄 새로고침</span>
                             </button>
                             
-                            <button onClick={() => { setUser(null); setEvents([]); calendarInstanceRef.current = null; }} className="text-xs text-slate-400 hover:text-red-500 transition">로그아웃</button>
+                            <button onClick={() => setUser(null)} className="...">로그아웃</button>
                         </div>
                     </header>
 
