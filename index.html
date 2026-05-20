@@ -756,6 +756,764 @@
             );
         }
 
+        <!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DNS: Card-Portal</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'media',
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/ko.global.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/date-holidays/dist/umd.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    
+    /* 기본 (라이트모드) 캘린더 스타일 */
+    .fc { --fc-border-color: #e2e8f0; --fc-today-bg-color: #f1f5f9; background: white; padding: 10px; border-radius: 12px; }
+    .fc .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 600; color: #1e293b; }
+    .fc .fc-button-primary { background-color: #1e40af !important; border-color: #1e40af !important; padding: 0.5rem 1rem; }
+    .fc-event { cursor: pointer; padding: 2px 5px; font-size: 0.75rem; border-radius: 4px; }
+    .fc-day-sun a { color: #ef4444 !important; text-decoration: none; } 
+    .fc-day-sat a { color: #3b82f6 !important; text-decoration: none; } 
+    .holiday-text { color: #ef4444; font-size: 0.7rem; font-weight: 500; margin-top: 2px; } 
+    .holiday-day a { color: #ef4444 !important; } 
+
+    /* 모바일 최적화 */
+    @media (max-width: 640px) {
+        .fc .fc-toolbar-title { font-size: 0.9rem !important; }
+        .fc .fc-button { padding: 0.2rem 0.4rem !important; font-size: 0.7rem !important; }
+        .fc-header-toolbar { flex-wrap: wrap; gap: 5px; }
+    }
+
+    /* [핵심 2] 다크모드 캘린더 전용 스타일 */
+    @media (prefers-color-scheme: dark) {
+        body { background-color: #0f172a; }
+        .fc { 
+            background: #1e293b; 
+            --fc-border-color: #334155; 
+            --fc-today-bg-color: #0f172a; 
+            --fc-page-bg-color: #1e293b;
+            --fc-neutral-text-color: #cbd5e1;
+            --fc-list-event-hover-bg-color: #334155;
+            color: #f8fafc; 
+        }
+        .fc .fc-toolbar-title { color: #f1f5f9 !important; }
+        .fc-theme-standard td, .fc-theme-standard th { border-color: #334155; }
+        .fc-col-header-cell-cushion, .fc-daygrid-day-number { color: #e2e8f0 !important; }
+        .fc-scrollgrid { border-color: #334155 !important; }
+        .fc-day-sun a, .holiday-day a { color: #f87171 !important; } 
+        .fc-day-sat a { color: #60a5fa !important; } 
+        .holiday-text { color: #f87171; }
+    }
+    </style>
+
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon.png">
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAhuFd-dWAUOtckSN2c_kThRSTELSf7K0C_BEtqtcklGnmUDRhZHz98eJkAAScWP4vBg/exec";
+
+        let hd = null;
+        try {
+            const Holiday = window.holidays || window.Holiday || window.DateHolidays;
+            if (Holiday) {
+                hd = new Holiday('KR');
+                hd.setLanguages(['ko']);
+            }
+        } catch (e) {
+            console.warn("date-holidays 로드 지연됨. 예비 데이터로 작동합니다.");
+        }
+
+        const FALLBACK_HOLIDAYS = {
+            "2026-01-01": "신정", "2026-02-16": "설날 연휴", "2026-02-17": "설날", "2026-02-18": "설날 연휴", "2026-03-01": "삼일절", "2026-03-02": "대체공휴일", "2026-05-05": "어린이날", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", "2026-06-03": "지방선거", "2026-06-06": "현충일", "2026-08-15": "광복절", "2026-09-24": "추석 연휴", "2026-09-25": "추석", "2026-09-26": "추석 연휴", "2026-10-03": "개천절", "2026-10-09": "한글날", "2026-12-25": "기독탄신일",
+            "2027-01-01": "신정", "2027-02-06": "설날 연휴", "2027-02-07": "설날", "2027-02-08": "설날 연휴", "2027-02-09": "대체공휴일", "2027-03-01": "삼일절", "2027-05-05": "어린이날", "2027-05-13": "부처님오신날", "2027-06-06": "현충일", "2027-08-15": "광복절", "2027-09-14": "추석 연휴", "2027-09-15": "추석", "2027-09-16": "추석 연휴", "2027-10-03": "개천절", "2027-10-09": "한글날", "2027-12-25": "기독탄신일"
+        };
+
+        const getHolidayName = (dateObj) => {
+            const dateStr = [
+                dateObj.getFullYear(),
+                String(dateObj.getMonth() + 1).padStart(2, '0'),
+                String(dateObj.getDate()).padStart(2, '0')
+            ].join('-');
+
+            if (hd) {
+                const res = hd.isHoliday(dateObj);
+                if (res && Array.isArray(res)) {
+                    const publicH = res.find(h => h.type === 'public' || h.type === 'bank');
+                    if (publicH) return publicH.name;
+                }
+            }
+            return FALLBACK_HOLIDAYS[dateStr] || null;
+        };
+
+        const DEPARTMENTS = [
+            "응급전용병동", "51병동", "52병동", "53병동", "60병동", "61병동", "62병동", "63병동", "65병동", "70병동", 
+            "71병동", "72병동", "73병동", "80병동", "81병동", "82병동", "83병동", "85병동", "90병동", "91병동", 
+            "92병동", "93병동", "95병동", "100병동", "101병동", "분만실", "내시경실", "심혈관센터", "암병원", "응급실", 
+            "인공신장실", "1신경계중환자실", "2신경계중환자실", "내과중환자실", "마취통증의학과", "수술실", "신생아중환자실", 
+            "심혈관계중환자실", "외과중환자실", "응급중환자실", "중앙공급실", "보호요원실", "간호교육기획팀"
+        ];
+
+        const TIME_OPTIONS = [
+            "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
+            "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", 
+            "15:30", "16:00", "16:30", "17:00", "17:30"
+        ];
+
+        function App() {
+            const [user, setUser] = React.useState(null);
+            const [loginInput, setLoginInput] = React.useState({ name: '', empNo: '' });
+            const [events, setEvents] = React.useState([]);
+            const [loading, setLoading] = React.useState(false);
+            
+            const [showListModal, setShowListModal] = React.useState(false);
+            const [selectedDateReservations, setSelectedDateReservations] = React.useState([]);
+            
+            const calendarInstanceRef = React.useRef(null);
+            const eventsRef = React.useRef(events);
+            
+            const [showNotice, setShowNotice] = React.useState(false);
+            const [showForm, setShowForm] = React.useState(false);
+            const [selectedEvent, setSelectedEvent] = React.useState(null);
+            const [selectedSlot, setSelectedSlot] = React.useState(null);
+
+            const [deptSelect, setDeptSelect] = React.useState('선택');
+            const [deptCustom, setDeptCustom] = React.useState('');
+            const [budgetSelect, setBudgetSelect] = React.useState('선택');
+            const [budgetCustom, setBudgetCustom] = React.useState('');
+            const [phone1Select, setPhone1Select] = React.useState('010');
+            const [phone1Custom, setPhone1Custom] = React.useState('');
+            const [phone2, setPhone2] = React.useState('');
+            const [phone3, setPhone3] = React.useState('');
+
+            const [formData, setFormData] = React.useState({
+                id: '', name: '', empNo: '', startDate: '', startTimePart: '', endDate: '', endTimePart: '', purpose: '', details: ''
+            });
+
+            const startRangeStr = "2026-05-01";
+            const maxDate = new Date(2026, 4, 1);
+            maxDate.setMonth(maxDate.getMonth() + 2);
+            const maxDateStr = [maxDate.getFullYear(), String(maxDate.getMonth() + 1).padStart(2, '0'), String(maxDate.getDate()).padStart(2, '0')].join('-');
+
+            React.useEffect(() => {
+                eventsRef.current = events;
+            }, [events]);
+
+            const fetchBookings = async () => {
+                setLoading(true);
+                try {
+                    const response = await fetch(GOOGLE_SCRIPT_URL);
+                    const data = await response.json();
+                    const formattedEvents = data.map(b => ({
+                        id: b.id,
+                        title: `[${b.dept}] ${b.name}`,
+                        start: b.startTime,
+                        end: b.endTime,
+                        extendedProps: { ...b },
+                        backgroundColor: b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : '#64748b',
+                        borderColor: 'transparent'
+                    }));
+                    setEvents(formattedEvents);
+                } catch (error) {
+                    console.error("데이터 로드 실패:", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                const trimmedName = loginInput.name.trim();
+                const trimmedEmpNo = loginInput.empNo.trim();
+                if (!trimmedName || !trimmedEmpNo) {
+                    alert("이름과 사번을 정확히 입력해주세요.");
+                    return;
+                }
+                const isSuperAdmin = trimmedName.toUpperCase().includes("DNS") && trimmedEmpNo === "1606";
+                setUser({ name: trimmedName, empNo: trimmedEmpNo, isAdmin: isSuperAdmin });
+            };
+
+            React.useEffect(() => { if (user) fetchBookings(); }, [user]);
+
+            React.useEffect(() => {
+                if (!user) return;
+
+                const timer = setTimeout(() => {
+                    const calendarEl = document.getElementById('calendar');
+                    if (!calendarEl || calendarInstanceRef.current) return;
+
+                    const calendar = new FullCalendar.Calendar(calendarEl, {
+                        height: 'auto', 
+                        locale: 'ko',
+                        selectable: true,
+                        selectLongPressDelay: 0,
+                        touchLongPressDelay: 0,
+                        allDaySlot: false,
+                        slotMinTime: '08:30:00',
+                        slotMaxTime: '17:30:00',
+                        validRange: { start: startRangeStr, end: maxDateStr },
+
+                        headerToolbar: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: 'dayGridMonth,timeGridDay'
+                        },
+
+                        dayCellClassNames: function(arg) {
+                            if (getHolidayName(arg.date)) return ['holiday-day'];
+                            return [];
+                        },
+
+                        dayCellContent: function(arg) {
+                            const dayNumber = arg.dayNumberText.replace('일', '');
+                            const holidayName = getHolidayName(arg.date);
+                            if (holidayName && arg.view.type === 'dayGridMonth') {
+                                return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
+                            }
+                            return { html: `<span>${dayNumber}</span>` };
+                        },
+
+                        eventContent: function(arg) {
+                            const start = new Date(arg.event.start);
+                            const end = new Date(arg.event.end);
+                            const getFormat = (d) => {
+                                let h = d.getHours();
+                                let m = d.getMinutes();
+                                const ampm = h < 12 ? 'A' : 'P';
+                                if (h > 12) h -= 12;
+                                if (h === 0) h = 12;
+                                const mStr = m === 0 ? '' : m; 
+                                return `${h}${ampm}${mStr}`;
+                            };
+                            const timeStr = `${getFormat(start)}~${getFormat(end)}`;
+                            const dept = arg.event.title.split(']')[0] + ']'; 
+                            return { html: `<div class="fc-event-main-frame" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${timeStr}</b> ${dept}</div>` };
+                        },
+
+                        select: function(info) {
+                            let sDate = info.startStr.split('T')[0];
+                            let eDate = info.endStr.split('T')[0];
+                            if (info.startStr.length === 10) {
+                                const eObj = new Date(info.endStr);
+                                eObj.setDate(eObj.getDate() - 1);
+                                eDate = eObj.toISOString().split('T')[0];
+                            }
+                            
+                            setSelectedSlot({ startDate: sDate, endDate: eDate });
+
+                            if (window.innerWidth < 640) {
+                                const allFcEvents = info.view.calendar.getEvents();
+                                const clickedTime = new Date(sDate + "T00:00:00").getTime();
+                                const nextDayTime = clickedTime + (24 * 60 * 60 * 1000);
+
+                                const dayEvents = allFcEvents.filter(ev => {
+                                    if (!ev.start || !ev.end) return false;
+                                    const evStart = ev.start.getTime();
+                                    const evEnd = ev.end.getTime();
+                                    return (evStart < nextDayTime) && (evEnd > clickedTime);
+                                }).map(ev => ({
+                                    id: ev.id,
+                                    title: ev.title,
+                                    startObj: ev.start, 
+                                    endObj: ev.end,
+                                    extendedProps: ev.extendedProps
+                                }));
+                                
+                                setSelectedDateReservations(dayEvents);
+                                setShowListModal(true); 
+                            } else {
+                                setSelectedEvent(null);
+                                setShowNotice(true);
+                            }
+                        },
+
+                        eventClick: function(info) {
+                            const props = info.event.extendedProps;
+                            setSelectedEvent(props);
+                            if (DEPARTMENTS.includes(props.dept)) {
+                                setDeptSelect(props.dept); setDeptCustom('');
+                            } else {
+                                setDeptSelect('직접 입력'); setDeptCustom(props.dept);
+                            }
+                            if (['간호부', 'QI(적정진료관리팀)', '총무팀'].includes(props.budget)) {
+                                setBudgetSelect(props.budget); setBudgetCustom('');
+                            } else {
+                                setBudgetSelect('기타'); setBudgetCustom(props.budget || '');
+                            }
+                            const pParts = (props.contact || '').split('-');
+                            if (['010', '011', '016'].includes(pParts[0])) {
+                                setPhone1Select(pParts[0] || '010'); setPhone1Custom('');
+                            } else {
+                                setPhone1Select('기타'); setPhone1Custom(pParts[0] || '');
+                            }
+                            setPhone2(pParts[1] || ''); setPhone3(pParts[2] || '');
+                            
+                            const start = new Date(props.startTime);
+                            const end = new Date(props.endTime);
+                            const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                            const toTimeStr = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+
+                            setFormData({ 
+                                id: props.id, name: props.name, empNo: props.empNo, 
+                                startDate: toDateStr(start), startTimePart: toTimeStr(start), 
+                                endDate: toDateStr(end), endTimePart: toTimeStr(end), 
+                                purpose: props.purpose, details: props.details 
+                            });
+                            setShowListModal(false); 
+                            setShowForm(true);
+                        },
+                    });
+
+                    calendar.render();
+                    calendarInstanceRef.current = calendar;
+                }, 150);
+
+                return () => {
+                    clearTimeout(timer);
+                    if (calendarInstanceRef.current) {
+                        calendarInstanceRef.current.destroy();
+                        calendarInstanceRef.current = null;
+                    }
+                };
+            }, [user]);
+
+            React.useEffect(() => {
+                if (calendarInstanceRef.current) {
+                    calendarInstanceRef.current.removeAllEvents();
+                    calendarInstanceRef.current.addEventSource(events);
+                }
+            }, [events]);
+
+            const confirmNotice = () => {
+                setShowNotice(false);
+                setDeptSelect('선택'); setDeptCustom(''); 
+                setBudgetSelect('선택'); setBudgetCustom(''); 
+                setPhone1Select('010'); setPhone1Custom('');
+                setPhone2(''); setPhone3('');
+
+                setFormData({
+                    id: '', name: user.name, empNo: user.empNo,
+                    startDate: selectedSlot.startDate, 
+                    startTimePart: '', 
+                    endDate: '', 
+                    endTimePart: '', 
+                    purpose: '', details: ''
+                });
+                setShowForm(true);
+            };
+
+            const isAvailableDate = (dateStr) => {
+                if (!dateStr) return false;
+                const date = new Date(dateStr + "T00:00:00"); 
+                const day = date.getDay(); 
+                
+                if (day === 0 || day === 6) return false;
+                if (typeof getHolidayName === 'function' && getHolidayName(date)) return false;
+                
+                return true;
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+
+                const finalDept = deptSelect === '직접 입력' ? deptCustom.trim() : deptSelect;
+                const finalBudget = budgetSelect === '기타' ? budgetCustom.trim() : budgetSelect;
+                const finalPhone1 = phone1Select === '기타' ? phone1Custom.trim() : phone1Select;
+                
+                if (deptSelect === '선택') return alert("대여 부서를 선택해주세요.");
+                if (budgetSelect === '선택') return alert("사용 예산 구분을 선택해주세요.");
+                if (!formData.startDate || !formData.startTimePart || !formData.endDate || !formData.endTimePart) {
+                    return alert("대여/반납 예정일 및 시간을 모두 선택해주세요.");
+                }
+
+                if (!isAvailableDate(formData.startDate)) return alert("대여 시작일은 주말 및 공휴일을 제외한 평일만 선택 가능합니다.");
+                if (!isAvailableDate(formData.endDate)) return alert("반납 예정일은 주말 및 공휴일을 제외한 평일만 선택 가능합니다.");
+
+                const combinedContact = `${finalPhone1}-${phone2.trim()}-${phone3.trim()}`;
+                
+                const newStart = new Date(`${formData.startDate}T${formData.startTimePart}:00`);
+                const newEnd = new Date(`${formData.endDate}T${formData.endTimePart}:00`);
+
+                if (newStart >= newEnd) {
+                    alert("반납 예정시간은 대여 시작시간보다 나중이어야 합니다.");
+                    return;
+                }
+
+                const diffTime = Math.abs(newEnd - newStart);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                if (diffDays > 3) {
+                    alert("원활한 카드 사용을 위해 장기 예약은 최대 3일까지만 가능합니다.\n필요시 기간을 나누어 예약해 주시기 바랍니다.");
+                    return;
+                }
+
+                const isOverlap = events.some(ev => {
+                    if (formData.id && String(ev.id) === String(formData.id)) return false; 
+                    const evStart = new Date(ev.start).getTime();
+                    const evEnd = new Date(ev.end).getTime();
+                    const reqStart = newStart.getTime();
+                    const reqEnd = newEnd.getTime();
+                    return (reqStart < evEnd) && (reqEnd > evStart);
+                });
+
+                if (isOverlap) {
+                    alert("선택하신 시간에 이미 예약된 내역이 있습니다. 다른 시간을 선택해주세요.");
+                    return;
+                }
+
+                setLoading(true);
+                const actionType = formData.id ? "UPDATE" : "CREATE";
+                
+                const payload = {
+                    id: formData.id,
+                    dept: finalDept,
+                    name: formData.name,
+                    empNo: formData.empNo,
+                    startTime: `${formData.startDate}T${formData.startTimePart}:00`,
+                    endTime: `${formData.endDate}T${formData.endTimePart}:00`,
+                    budget: finalBudget,
+                    purpose: formData.purpose,
+                    details: formData.details,
+                    contact: combinedContact
+                };
+
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: actionType, ...payload })
+                    });
+                    alert(actionType === "CREATE" ? "예약이 완료되었습니다." : "예약이 수정되었습니다.");
+                    setShowForm(false);
+                    fetchBookings();
+                } catch (error) {
+                    alert("서버 통신 중 오류가 발생했습니다.");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleDelete = async () => {
+                if (!confirm("정말 이 예약을 취소하시겠습니까?")) return;
+                setLoading(true);
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: "DELETE", id: formData.id })
+                    });
+                    alert("예약이 취소되었습니다.");
+                    setShowForm(false);
+                    fetchBookings();
+                } catch (error) {
+                    alert("취소 처리 중 오류가 발생했습니다.");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const hasPermission = React.useMemo(() => {
+                if (!user) return false; 
+                if (!selectedEvent) return true; 
+                if (user.isAdmin) return true;
+                const eventEmpNo = String(selectedEvent.empNo || "").trim();
+                const userEmpNo = String(user.empNo || "").trim();
+                return eventEmpNo === userEmpNo;
+            }, [user, selectedEvent]);
+
+            // [핵심 3] 모든 래퍼 및 컴포넌트에 dark: 속성 완전 반영
+            if (!user) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 transition-colors duration-200">
+                        <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 border border-slate-100 dark:border-slate-700 transition-colors duration-200">
+                            <div className="text-center mb-8">
+                                <h2 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">간호부 법인카드 예약 시스템</h2>
+                                <p className="text-sm text-slate-400 dark:text-slate-400 mt-2">이름과 사번을 정확히 입력해 주세요.</p>
+                            </div>
+                            <form onSubmit={handleLogin} className="space-y-5">
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">이름</label>
+                                    <input type="text" required value={loginInput.name} onChange={e => setLoginInput({...loginInput, name: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 text-sm transition" placeholder="홍길동" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">사번</label>
+                                    <input type="text" required value={loginInput.empNo} onChange={e => setLoginInput({...loginInput, empNo: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 text-sm transition" placeholder="사번 입력 (영문은 대문자 입력)" />
+                                </div>
+                                <button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-3 rounded-xl shadow-lg shadow-blue-700/10 transition text-sm">시스템 접속</button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200">
+                    <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex justify-between items-center flex-wrap gap-2 sticky top-0 z-10 shadow-sm transition-colors duration-200">
+                        <div className="flex items-center space-x-3">
+                            <span className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">DNS: Card-Portal</span>
+                        </div>
+                        <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center space-x-4">
+                            <span><strong className="text-slate-900 dark:text-white">{user.name}</strong> 님 반갑습니다.</span>
+                            
+                            <button onClick={fetchBookings} className="flex items-center space-x-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium transition border border-slate-200 dark:border-slate-600 shadow-sm">
+                                <span>🔄 새로고침</span>
+                            </button>
+                            
+                            <button onClick={() => { 
+                                setUser(null); 
+                                setSelectedEvent(null); 
+                                setShowForm(false); 
+                                setShowListModal(false); 
+                                setShowNotice(false);
+                            }} className="text-blue-600 dark:text-blue-400 hover:underline">로그아웃</button>
+                        </div>
+                    </header>
+
+                    <main className="max-w-7xl mx-auto p-2 sm:p-8">
+                        <div className="mb-6 bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 rounded-xl p-4 flex items-start space-x-3 transition-colors duration-200">
+                            <div className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5">
+                                    <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 0 1 .67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 1 1-.671-1.34l.041-.022ZM12 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="text-xs sm:text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                                <p className="font-semibold text-xs sm:text-sm">법인카드 예약 안내</p>
+                                <ul className="list-disc list-inside text-[10px] sm:text-sm text-blue-700/80 dark:text-blue-300/80">
+                                    <li>예약은 최대 <strong className="dark:text-blue-200">2개월 후</strong>까지만 가능합니다.</li>
+                                    <li><strong className="dark:text-blue-200">원활한 법인카드 사용을 위하여 3일 초과 장기 예약은 제한</strong>됩니다.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-4 h-auto relative transition-colors duration-200">
+                            <div id="calendar" className="w-full"></div>
+                        </div>
+
+                        {loading && (
+                            <div className="fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999]">
+                                <div className="bg-white dark:bg-slate-800 px-6 py-4 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 flex items-center space-x-3">
+                                    <svg className="animate-spin h-6 w-6 text-blue-700 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span className="text-sm font-bold text-blue-700 dark:text-blue-400">동기화 중...</span>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {showListModal && (
+                    <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700">
+                            <h3 className="font-bold mb-4 text-slate-900 dark:text-white">{selectedSlot?.startDate} 예약 목록</h3>
+                            {selectedDateReservations.length > 0 ? (
+                                selectedDateReservations.map(ev => {
+                                    const formatTime = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+                                    const formatDate = (d) => String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
+                                    
+                                    const isSameDay = ev.startObj.toDateString() === ev.endObj.toDateString();
+                                    const timeDisplay = isSameDay 
+                                        ? `${formatTime(ev.startObj)} ~ ${formatTime(ev.endObj)}`
+                                        : `${formatDate(ev.startObj)} ${formatTime(ev.startObj)} ~ ${formatDate(ev.endObj)} ${formatTime(ev.endObj)}`;
+
+                                    return (
+                                        <div key={ev.id} onClick={() => { setSelectedEvent(ev.extendedProps); setShowListModal(false); setShowForm(true); }} className="p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm flex flex-col gap-1 transition-colors">
+                                            <span className="font-semibold text-blue-700 dark:text-blue-400">{ev.title}</span>
+                                            <span className="text-slate-500 dark:text-slate-400 text-xs">{timeDisplay}</span>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-4">예약된 내역이 없습니다.</p>
+                            )}
+                            <button onClick={() => { setSelectedEvent(null); setShowListModal(false); setShowNotice(true); }} className="w-full mt-4 bg-blue-700 hover:bg-blue-800 text-white p-3 rounded-xl shadow-md font-medium transition text-sm">
+                                + 신규 예약 신청하기
+                            </button>
+                        </div>
+                    </div>
+                    )}
+                    
+                    {showNotice && (
+                        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl p-6 border border-slate-100 dark:border-slate-700">
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">법인카드 대여 사전 유의사항</h3>
+                                <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6 space-y-3">
+                                    <p>
+                                        • 법인카드 결제 영수증은 A4 용지에 부착하여 제출 부탁드립니다.<br/>
+                                        <span className="text-blue-600 dark:text-blue-400">(카드번호 뒷자리 4자리 기입, 사용 부서 및 용도, 거래내역 표기 필수)</span>
+                                    </p>
+                                    <p>• 결제 영수증은 사용월 기준 익월 10일까지 제출 필수</p>
+                                    <div>
+                                        <p className="font-semibold text-red-600 dark:text-red-400 mb-1">• 법인카드 사용 제한 항목</p>
+                                        <p className="pl-2">- 백화점 상품권, 주유 상품권, 문화(도서)상품권 및 기타 상품권 등</p>
+                                        <p className="pl-2">- 선불카드 및 전자상품권(기프트카드 등) 구매 및 충전</p>
+                                        <p className="pl-2">- 선물세트 구입 (구매내역 상 '선물세트' 포함 시에도 해당)</p>
+                                    </div>
+                                </div>
+                                <div className="flex space-x-3">
+                                    <button onClick={() => setShowNotice(false)} className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 font-medium py-3 rounded-xl transition text-sm">취소</button>
+                                    <button onClick={confirmNotice} className="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-medium py-3 rounded-xl transition text-sm">유의사항 확인 완료</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showForm && selectedSlot && (
+    <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl p-5 sm:p-6 border border-slate-100 dark:border-slate-700 my-10 relative">
+                                <div className="flex justify-between items-center mb-5">
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">{formData.id ? "예약 상세 정보" : "신규 법인카드 예약 신청"}</h3>
+                                    <button type="button" onClick={() => setShowForm(false)} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-xl transition-colors">&times;</button>
+                                </div>
+                                
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여 부서</label>
+                                        <select disabled={!hasPermission} value={deptSelect} onChange={e => setDeptSelect(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors">
+                                            <option value="선택" disabled>선택</option>
+                                            {DEPARTMENTS.map(dept => (
+                                                <option key={dept} value={dept}>{dept}</option>
+                                            ))}
+                                            <option value="직접 입력">직접 입력</option>
+                                        </select>
+                                        {deptSelect === '직접 입력' && (
+                                            <input type="text" disabled={!hasPermission} required value={deptCustom} onChange={e => setDeptCustom(e.target.value)} className="w-full mt-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="정확한 부서명으로 기입" />
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">사용 예산 구분</label>
+                                        <select disabled={!hasPermission} value={budgetSelect} onChange={e => setBudgetSelect(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors">
+                                            <option value="선택" disabled>선택</option>
+                                            <option value="간호부">간호부</option>
+                                            <option value="QI(적정진료관리팀)">QI(적정진료관리팀)</option>
+                                            <option value="총무팀">총무팀</option>
+                                            <option value="기타">기타</option>
+                                        </select>
+                                        {budgetSelect === '기타' && (
+                                            <input type="text" disabled={!hasPermission} required value={budgetCustom} onChange={e => setBudgetCustom(e.target.value)} className="w-full mt-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="정확한 부서명 기입" />
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여자 이름</label>
+                                            <input type="text" disabled={!hasPermission} required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여자 사번</label>
+                                            <input type="text" disabled={!hasPermission} required value={formData.empNo} onChange={e => setFormData({...formData, empNo: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여 시작일 및 시간</label>
+                                            <div className="flex flex-col space-y-2">
+                                                <input 
+    type="date" 
+    disabled={!hasPermission} 
+    required 
+    value={formData.startDate} // endDate를 startDate로 수정
+    onChange={e => setFormData({...formData, startDate: e.target.value})} // setFormData({...formData, startDate: ...})로 수정
+    className="w-full max-w-full px-3 py-2 min-h-[42px] rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" 
+/>
+                                                <select disabled={!hasPermission} required value={formData.startTimePart} onChange={e => setFormData({...formData, startTimePart: e.target.value})} className="w-full min-w-0 max-w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors">
+                                                    <option value="" disabled>선택</option>
+                                                    {TIME_OPTIONS.map(time => <option key={`start-${time}`} value={time}>{time}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">반납 예정일 및 시간</label>
+                                            <div className="flex flex-col space-y-2">
+                                                {/* 반납 예정일 입력창 부분 */}
+<input 
+    type="date" 
+    disabled={!hasPermission} 
+    required 
+    value={formData.endDate} 
+    onChange={e => setFormData({...formData, endDate: e.target.value})} 
+    className="w-full px-3 py-2 min-h-[42px] rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" 
+/>
+                                                <select disabled={!hasPermission} required value={formData.endTimePart} onChange={e => setFormData({...formData, endTimePart: e.target.value})} className="w-full px-3 py-2 min-h-[42px] rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 transition-colors"
+                                                    <option value="" disabled>선택</option>
+                                                    {TIME_OPTIONS.map(time => <option key={`end-${time}`} value={time}>{time}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">사용 용도 (사업명 또는 사업계획서명)</label>
+                                        <input type="text" disabled={!hasPermission} required value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="목적을 명확히 기입해주세요." />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">세부 내용 (선택사항)</label>
+                                        <textarea disabled={!hasPermission} value={formData.details} onChange={e => setFormData({...formData, details: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm h-16 focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="필요시 기입"></textarea>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">연락처 (휴대폰 번호)</label>
+                                        <div className="flex items-center space-x-2">
+                                            <select disabled={!hasPermission} value={phone1Select} onChange={e => setPhone1Select(e.target.value)} className="w-24 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors">
+                                                <option value="010">010</option>
+                                                <option value="011">011</option>
+                                                <option value="016">016</option>
+                                                <option value="기타">직접 입력</option>
+                                            </select>
+                                            <span className="text-slate-400 dark:text-slate-500">-</span>
+                                            <input type="text" disabled={!hasPermission} required maxLength="4" value={phone2} onChange={e => setPhone2(e.target.value.replace(/[^0-9]/g, ''))} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm text-center focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="" />
+                                            <span className="text-slate-400 dark:text-slate-500">-</span>
+                                            <input type="text" disabled={!hasPermission} required maxLength="4" value={phone3} onChange={e => setPhone3(e.target.value.replace(/[^0-9]/g, ''))} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm text-center focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="" />
+                                        </div>
+                                        {phone1Select === '기타' && (
+                                            <div className="mt-2">
+                                                <input type="text" disabled={!hasPermission} required maxLength="4" value={phone1Custom} onChange={e => setPhone1Custom(e.target.value.replace(/[^0-9]/g, ''))} className="w-24 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm text-center focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="번호 입력" />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="flex space-x-2 pt-4 border-t border-slate-100 dark:border-slate-700 mt-4">
+                                        {formData.id && hasPermission && (
+                                            <button type="button" onClick={handleDelete} className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 font-medium px-4 py-2.5 rounded-xl text-sm transition">예약 취소</button>
+                                        )}
+                                        <div className="flex-1 flex justify-end space-x-2">
+                                            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">취소</button>
+                                            {hasPermission && (
+                                                <button 
+                                                    type="submit" 
+                                                    disabled={loading} 
+                                                    className={`px-6 py-2.5 rounded-xl text-sm font-medium transition ${loading ? 'bg-gray-400 dark:bg-slate-600 cursor-not-allowed text-white' : 'bg-blue-700 text-white hover:bg-blue-800 dark:hover:bg-blue-600'}`}
+                                                >
+                                                    {loading ? '저장 중...' : '저장'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
         const container = document.getElementById('root');
         const root = ReactDOM.createRoot(container);
