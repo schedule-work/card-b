@@ -215,25 +215,26 @@
                         allDaySlot: false,
                         slotMinTime: '08:30:00',
                         slotMaxTime: '17:30:00',
-                        // 1. 기존 validRange를 2026-05-01 고정으로 변경 (과거 조회용)
+                        // 기존 validRange 아래에 이어서 붙여넣으세요
     validRange: { start: '2026-05-01' },
 
-    // 2. 접속 시점 기준 2개월 이내만 예약 가능하도록 제한하는 로직 추가
     selectAllow: function(selectInfo) {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // 오늘 날짜 정각 기준
+        today.setHours(0, 0, 0, 0); // 오늘 정각
         
         const maxSelectDate = new Date();
         maxSelectDate.setHours(0, 0, 0, 0);
-        maxSelectDate.setMonth(maxSelectDate.getMonth() + 2); // 오늘 기준 딱 2개월 뒤
+        maxSelectDate.setMonth(maxSelectDate.getMonth() + 2); // 2개월 뒤
         
         const selectStart = new Date(selectInfo.startStr + "T00:00:00");
         
-        // 오늘보다 과거이거나, 2개월 뒤를 초과한 미래인 경우 선택 차단
+        // [조건 체크] 과거 날짜이거나 2개월을 초과한 경우
         if (selectStart < today || selectStart > maxSelectDate) {
-            return false; 
+            // 유저에게 알림창 띄우기
+            alert("⚠️ 예약은 오늘부터 2개월 이내의 날짜만 신청 가능합니다.\n(과거 날짜 및 먼 미래는 조회만 가능합니다)");
+            return false; // 선택 차단
         }
-        return true; // 범위 안의 날짜만 드래그/클릭 허용
+        return true; // 허용
     },
                         headerToolbar: {
                             left: 'prev,next today',
