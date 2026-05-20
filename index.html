@@ -838,8 +838,9 @@ const payload = {
             );
         }
 
-        // 기존의 container, root 선언 2줄을 지우고 딱 이 코드만 넣으세요
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-    </script>
+                // React 18 UMD 버전에서는 ReactDOM이 아니라 ReactDOMClient를 사용해야 합니다.
+        const root = ReactDOMClient.createRoot(document.getElementById('root'));
+        root.render(<App />);
+            </script>
 </body>
 </html>
