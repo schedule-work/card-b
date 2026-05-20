@@ -512,11 +512,28 @@
                         <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
                             <h3 className="font-bold mb-4">{selectedSlot?.startDate} 예약 목록</h3>
                             {selectedDateReservations.length > 0 ? (
-                                selectedDateReservations.map(ev => (
-                                    <div key={ev.id} onClick={() => { setSelectedEvent(ev.extendedProps); setShowListModal(false); setShowForm(true); }} className="p-3 border-b hover:bg-slate-50 cursor-pointer text-sm">
-                                        <span className="font-semibold text-blue-700">{ev.title}</span> <span className="text-slate-500">({ev.start.split('T')[1].substring(0,5)})</span>
-                                    </div>
-                                ))
+                                selectedDateReservations.map(ev => {
+                                    const startObj = new Date(ev.start);
+                                    const endObj = new Date(ev.end);
+                                    
+                                    // 시간 포맷팅 함수 (예: 09:30)
+                                    const formatTime = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+                                    // 날짜 포맷팅 함수 (예: 05/18)
+                                    const formatDate = (d) => String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
+                                    
+                                    // 당일 예약인지 다일 예약인지에 따라 표시 형식 다르게 처리
+                                    const isSameDay = startObj.toDateString() === endObj.toDateString();
+                                    const timeDisplay = isSameDay 
+                                        ? `${formatTime(startObj)} ~ ${formatTime(endObj)}`
+                                        : `${formatDate(startObj)} ${formatTime(startObj)} ~ ${formatDate(endObj)} ${formatTime(endObj)}`;
+
+                                    return (
+                                        <div key={ev.id} onClick={() => { setSelectedEvent(ev.extendedProps); setShowListModal(false); setShowForm(true); }} className="p-3 border-b hover:bg-slate-50 cursor-pointer text-sm flex flex-col gap-1">
+                                            <span className="font-semibold text-blue-700">{ev.title}</span>
+                                            <span className="text-slate-500 text-xs">{timeDisplay}</span>
+                                        </div>
+                                    );
+                                })
                             ) : (
                                 <p className="text-slate-500 text-sm text-center py-4">예약된 내역이 없습니다.</p>
                             )}
