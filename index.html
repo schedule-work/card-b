@@ -46,7 +46,7 @@
 </head>
 <body>
     <div id="root"></div>
-
+######
     <script type="text/babel">
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAhuFd-dWAUOtckSN2c_kThRSTELSf7K0C_BEtqtcklGnmUDRhZHz98eJkAAScWP4vBg/exec";
 
@@ -237,16 +237,15 @@
         eDate = eObj.toISOString().split('T')[0];
     }
     
-    // PC와 모바일 분기 처리
+    setSelectedSlot({ startDate: sDate, endDate: eDate });
+
     if (window.innerWidth < 640) {
-        // [모바일] 목록 모달 먼저 띄우기
+        // [모바일] 클릭한 날짜의 예약만 필터링하여 모달 띄우기
         const dayEvents = events.filter(ev => ev.start.split('T')[0] === sDate);
         setSelectedDateReservations(dayEvents);
-        setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
         setShowListModal(true); 
     } else {
-        // [PC] 기존처럼 바로 유의사항 띄우기
-        setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
+        // [PC] 기존처럼 유의사항 띄우기
         setSelectedEvent(null);
         setShowNotice(true);
     }
@@ -273,28 +272,22 @@
                                 setPhone1Select('기타'); setPhone1Custom(pParts[0] || '');
                             }
                             setPhone2(pParts[1] || ''); setPhone3(pParts[2] || '');
-                            const startDate = new Date(props.startTime);
-    const endDate = new Date(props.endTime);
-
-    // YYYY-MM-DD 포맷 변환
+                            
+                            
+                            const start = new Date(props.startTime);
+    const end = new Date(props.endTime);
     const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    // HH:mm 포맷 변환
     const toTimeStr = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 
     setFormData({ 
-        id: props.id, 
-        name: props.name, 
-        empNo: props.empNo, 
-        startDate: toDateStr(startDate), 
-        startTimePart: toTimeStr(startDate), 
-        endDate: toDateStr(endDate), 
-        endTimePart: toTimeStr(endDate), 
-        purpose: props.purpose, 
-        details: props.details 
+        id: props.id, name: props.name, empNo: props.empNo, 
+        startDate: toDateStr(start), startTimePart: toTimeStr(start), 
+        endDate: toDateStr(end), endTimePart: toTimeStr(end), 
+        purpose: props.purpose, details: props.details 
     });
-    
+    setShowListModal(false); // 리스트 모달이 떠있을 수 있으니 닫기
     setShowForm(true);
-}
+},
                     });
 
                     calendar.render();
@@ -530,6 +523,24 @@ const hasPermission = React.useMemo(() => {
     </div>
 </main>
 
+                    {showListModal && (
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+                            <h3 className="font-bold mb-4">{selectedSlot?.startDate} 예약 목록</h3>
+                            {selectedDateReservations.length > 0 ? (
+                                selectedDateReservations.map(ev => (
+                                    <div key={ev.id} onClick={() => { setSelectedEvent(ev.extendedProps); setShowListModal(false); setShowForm(true); }} className="p-2 border-b cursor-pointer">
+                                        {ev.title} ({ev.start.split('T')[1].substring(0,5)})
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-gray-500 text-sm">예약된 내역이 없습니다.</p>
+                            )}
+                            <button onClick={() => { setShowListModal(false); setShowNotice(true); }} className="w-full mt-4 bg-blue-700 text-white p-3 rounded-xl">+ 신규 예약 신청하기</button>
+                        </div>
+                    </div>
+                )}
+                    
                     {showNotice && (
                         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                             <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl p-6 border border-slate-100">
