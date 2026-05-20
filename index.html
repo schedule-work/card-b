@@ -262,9 +262,19 @@
                                 setPhone1Select('기타'); setPhone1Custom(pParts[0] || '');
                             }
                             setPhone2(pParts[1] || ''); setPhone3(pParts[2] || '');
-                            const sDt = props.startTime.split('T');
-                            const eDt = props.endTime.split('T');
-                            setFormData({ id: props.id, name: props.name, empNo: props.empNo, startDate: sDt[0], startTimePart: sDt[1].substring(0,5), endDate: eDt[0], endTimePart: eDt[1].substring(0,5), purpose: props.purpose, details: props.details });
+                            setFormData({ 
+    id: props.id, 
+    name: props.name, 
+    empNo: props.empNo, 
+    // substring(0, 10)은 문자열의 앞 10자리(YYYY-MM-DD)를 가져옵니다.
+    startDate: props.startTime.substring(0, 10), 
+    // substring(11, 16)은 문자열의 11~15번째 자리(HH:mm)를 가져옵니다.
+    startTimePart: props.startTime.substring(11, 16), 
+    endDate: props.endTime.substring(0, 10), 
+    endTimePart: props.endTime.substring(11, 16), 
+    purpose: props.purpose, 
+    details: props.details 
+});
                             setShowForm(true);
                         }
                     });
