@@ -175,412 +175,96 @@
                     if (!calendarEl || calendarInstanceRef.current) return;
 
                     const calendar = new FullCalendar.Calendar(calendarEl, {
-    // 1. 기본 설정 (나란히 배치)
-    height: 'auto', 
-    locale: 'ko',
-    selectable: true,
-    selectLongPressDelay: 0,
-    touchLongPressDelay: 0,
-    allDaySlot: false,
-    slotMinTime: '08:30:00',
-    slotMaxTime: '17:30:00',
-    validRange: { start: startRangeStr, end: maxDateStr },
+                        // 1. 기본 설정
+                        height: 'auto', 
+                        locale: 'ko',
+                        selectable: true,
+                        selectLongPressDelay: 0,
+                        touchLongPressDelay: 0,
+                        allDaySlot: false,
+                        slotMinTime: '08:30:00',
+                        slotMaxTime: '17:30:00',
+                        validRange: { start: startRangeStr, end: maxDateStr },
 
-    // 2. 툴바 설정
-    headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridDay'
-    },
+                        // 2. 툴바 설정
+                        headerToolbar: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: 'dayGridMonth,timeGridDay'
+                        },
 
-    // 3. 공휴일 클래스 설정 (select 함수 밖으로 꺼냄)
-    dayCellClassNames: function(arg) {
-        if (getHolidayName(arg.date)) return ['holiday-day'];
-        return [];
-    },
+                        // 3. 공휴일 클래스 설정
+                        dayCellClassNames: function(arg) {
+                            if (getHolidayName(arg.date)) return ['holiday-day'];
+                            return [];
+                        },
 
-    // 4. 공휴일 텍스트 표시 (select 함수 밖으로 꺼냄)
-    dayCellContent: function(arg) {
-        const dayNumber = arg.dayNumberText.replace('일', '');
-        const holidayName = getHolidayName(arg.date);
-        if (holidayName && arg.view.type === 'dayGridMonth') {
-            return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
-        }
-        return { html: `<span>${dayNumber}</span>` };
-    },
-
-    // 5. 이벤트 표시 방식
-    eventContent: function(arg) {
-        const start = new Date(arg.event.start);
-        const end = new Date(arg.event.end);
-        const getFormat = (d) => {
-            let h = d.getHours();
-            let m = d.getMinutes();
-            const ampm = h < 12 ? 'A' : 'P';
-            if (h > 12) h -= 12;
-            if (h === 0) h = 12;
-            const mStr = m === 0 ? '' : m; 
-            return `${h}${ampm}${mStr}`;
-        };
-        const timeStr = `${getFormat(start)}~${getFormat(end)}`;
-        const dept = arg.event.title.split(']')[0] + ']'; 
-        return { html: `<div class="fc-event-main-frame" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${timeStr}</b> ${dept}</div>` };
-    },
-
-    // 6. 날짜 클릭했을 때 (select 함수는 여기서 끝납니다)
-    select: function(info) {
-        let sDate = info.startStr.split('T')[0];
-        let eDate = info.endStr.split('T')[0];
-        if (info.startStr.length === 10) {
-            const eObj = new Date(info.endStr);
-            eObj.setDate(eObj.getDate() - 1);
-            eDate = eObj.toISOString().split('T')[0];
-        }
-        setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
-        setSelectedEvent(null);
-        setShowNotice(true);
-    },
-
-    // 7. 이벤트 클릭했을 때
-    eventClick: function(info) {
-        const props = info.event.extendedProps;
-        setSelectedEvent(props);
-        if (DEPARTMENTS.includes(props.dept)) {
-            setDeptSelect(props.dept); setDeptCustom('');
-        } else {
-            setDeptSelect('직접 입력'); setDeptCustom(props.dept);
-        }const calendar = new FullCalendar.Calendar(calendarEl, {
-    // 1. 기본 설정 (나란히 배치)
-    height: 'auto', 
-    locale: 'ko',
-    selectable: true,
-    selectLongPressDelay: 0,
-    touchLongPressDelay: 0,
-    allDaySlot: false,
-    slotMinTime: '08:30:00',
-    slotMaxTime: '17:30:00',
-    validRange: { start: startRangeStr, end: maxDateStr },
-
-    // 2. 툴바 설정
-    headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridDay'
-    },
-
-    // 3. 공휴일 클래스 설정 (select 함수 밖으로 꺼냄)
-    dayCellClassNames: function(arg) {
-        if (getHolidayName(arg.date)) return ['holiday-day'];
-        return [];
-    },
-
-    // 4. 공휴일 텍스트 표시 (select 함수 밖으로 꺼냄)
-    dayCellContent: function(arg) {
-        const dayNumber = arg.dayNumberText.replace('일', '');
-        const holidayName = getHolidayName(arg.date);
-        if (holidayName && arg.view.type === 'dayGridMonth') {
-            return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
-        }
-        return { html: `<span>${dayNumber}</span>` };
-    },
-
-    // 5. 이벤트 표시 방식
-    eventContent: function(arg) {
-        const start = new Date(arg.event.start);
-        const end = new Date(arg.event.end);
-        const getFormat = (d) => {
-            let h = d.getHours();
-            let m = d.getMinutes();
-            const ampm = h < 12 ? 'A' : 'P';
-            if (h > 12) h -= 12;
-            if (h === 0) h = 12;
-            const mStr = m === 0 ? '' : m; 
-            return `${h}${ampm}${mStr}`;
-        };
-        const timeStr = `${getFormat(start)}~${getFormat(end)}`;
-        const dept = arg.event.title.split(']')[0] + ']'; 
-        return { html: `<div class="fc-event-main-frame" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${timeStr}</b> ${dept}</div>` };
-    },
-
-    // 6. 날짜 클릭했을 때 (select 함수는 여기서 끝납니다)
-    select: function(info) {
-        let sDate = info.startStr.split('T')[0];
-        let eDate = info.endStr.split('T')[0];
-        if (info.startStr.length === 10) {
-            const eObj = new Date(info.endStr);
-            eObj.setDate(eObj.getDate() - 1);
-            eDate = eObj.toISOString().split('T')[0];
-        }
-        setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
-        setSelectedEvent(null);
-        setShowNotice(true);
-    },
-
-    // 7. 이벤트 클릭했을 때
-    eventClick: function(info) {
-        const props = info.event.extendedProps;
-        setSelectedEvent(props);
-        if (DEPARTMENTS.includes(props.dept)) {
-            setDeptSelect(props.dept); setDeptCustom('');
-        } else {
-            setDeptSelect('직접 입력'); setDeptCustom(props.dept);
-        }const calendar = new FullCalendar.Calendar(calendarEl, {
-    // 1. 기본 설정 (나란히 배치)
-    height: 'auto', 
-    locale: 'ko',
-    selectable: true,
-    selectLongPressDelay: 0,
-    touchLongPressDelay: 0,
-    allDaySlot: false,
-    slotMinTime: '08:30:00',
-    slotMaxTime: '17:30:00',
-    validRange: { start: startRangeStr, end: maxDateStr },
-
-    // 2. 툴바 설정
-    headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridDay'
-    },
-
-    // 3. 공휴일 클래스 설정 (select 함수 밖으로 꺼냄)
-    dayCellClassNames: function(arg) {
-        if (getHolidayName(arg.date)) return ['holiday-day'];
-        return [];
-    },
-
-    // 4. 공휴일 텍스트 표시 (select 함수 밖으로 꺼냄)
-    dayCellContent: function(arg) {
-        const dayNumber = arg.dayNumberText.replace('일', '');
-        const holidayName = getHolidayName(arg.date);
-        if (holidayName && arg.view.type === 'dayGridMonth') {
-            return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
-        }
-        return { html: `<span>${dayNumber}</span>` };
-    },
-
-    // 5. 이벤트 표시 방식
-    eventContent: function(arg) {
-        const start = new Date(arg.event.start);
-        const end = new Date(arg.event.end);
-        const getFormat = (d) => {
-            let h = d.getHours();
-            let m = d.getMinutes();
-            const ampm = h < 12 ? 'A' : 'P';
-            if (h > 12) h -= 12;
-            if (h === 0) h = 12;
-            const mStr = m === 0 ? '' : m; 
-            return `${h}${ampm}${mStr}`;
-        };
-        const timeStr = `${getFormat(start)}~${getFormat(end)}`;
-        const dept = arg.event.title.split(']')[0] + ']'; 
-        return { html: `<div class="fc-event-main-frame" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${timeStr}</b> ${dept}</div>` };
-    },
-
-    // 6. 날짜 클릭했을 때 (select 함수는 여기서 끝납니다)
-    select: function(info) {
-        let sDate = info.startStr.split('T')[0];
-        let eDate = info.endStr.split('T')[0];
-        if (info.startStr.length === 10) {
-            const eObj = new Date(info.endStr);
-            eObj.setDate(eObj.getDate() - 1);
-            eDate = eObj.toISOString().split('T')[0];
-        }
-        setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
-        setSelectedEvent(null);
-        setShowNotice(true);
-    },
-
-    // 7. 이벤트 클릭했을 때
-    eventClick: function(info) {
-        const props = info.event.extendedProps;
-        setSelectedEvent(props);
-        if (DEPARTMENTS.includes(props.dept)) {
-            setDeptSelect(props.dept); setDeptCustom('');
-        } else {
-            setDeptSelect('직접 입력'); setDeptCustom(props.dept);
-        }const calendar = new FullCalendar.Calendar(calendarEl, {
-    // 1. 기본 설정 (나란히 배치)
-    height: 'auto', 
-    locale: 'ko',
-    selectable: true,
-    selectLongPressDelay: 0,
-    touchLongPressDelay: 0,
-    allDaySlot: false,
-    slotMinTime: '08:30:00',
-    slotMaxTime: '17:30:00',
-    validRange: { start: startRangeStr, end: maxDateStr },
-
-    // 2. 툴바 설정
-    headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridDay'
-    },
-
-    // 3. 공휴일 클래스 설정 (select 함수 밖으로 꺼냄)
-    dayCellClassNames: function(arg) {
-        if (getHolidayName(arg.date)) return ['holiday-day'];
-        return [];
-    },
-
-    // 4. 공휴일 텍스트 표시 (select 함수 밖으로 꺼냄)
-    dayCellContent: function(arg) {
-        const dayNumber = arg.dayNumberText.replace('일', '');
-        const holidayName = getHolidayName(arg.date);
-        if (holidayName && arg.view.type === 'dayGridMonth') {
-            return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
-        }
-        return { html: `<span>${dayNumber}</span>` };
-    },
-
-    // 5. 이벤트 표시 방식
-    eventContent: function(arg) {
-        const start = new Date(arg.event.start);
-        const end = new Date(arg.event.end);
-        const getFormat = (d) => {
-            let h = d.getHours();
-            let m = d.getMinutes();
-            const ampm = h < 12 ? 'A' : 'P';
-            if (h > 12) h -= 12;
-            if (h === 0) h = 12;
-            const mStr = m === 0 ? '' : m; 
-            return `${h}${ampm}${mStr}`;
-        };
-        const timeStr = `${getFormat(start)}~${getFormat(end)}`;
-        const dept = arg.event.title.split(']')[0] + ']'; 
-        return { html: `<div class="fc-event-main-frame" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${timeStr}</b> ${dept}</div>` };
-    },
-
-    // 6. 날짜 클릭했을 때 (select 함수는 여기서 끝납니다)
-    select: function(info) {
-        let sDate = info.startStr.split('T')[0];
-        let eDate = info.endStr.split('T')[0];
-        if (info.startStr.length === 10) {
-            const eObj = new Date(info.endStr);
-            eObj.setDate(eObj.getDate() - 1);
-            eDate = eObj.toISOString().split('T')[0];
-        }
-        setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
-        setSelectedEvent(null);
-        setShowNotice(true);
-    },
-
-    // 7. 이벤트 클릭했을 때
-    eventClick: function(info) {
-        const props = info.event.extendedProps;
-        setSelectedEvent(props);
-        if (DEPARTMENTS.includes(props.dept)) {
-            setDeptSelect(props.dept); setDeptCustom('');
-        } else {
-            setDeptSelect('직접 입력'); setDeptCustom(props.dept);
-        }const calendar = new FullCalendar.Calendar(calendarEl, {
-    // 1. 기본 설정 (나란히 배치)
-    height: 'auto', 
-    locale: 'ko',
-    selectable: true,
-    selectLongPressDelay: 0,
-    touchLongPressDelay: 0,
-    allDaySlot: false,
-    slotMinTime: '08:30:00',
-    slotMaxTime: '17:30:00',
-    validRange: { start: startRangeStr, end: maxDateStr },
-
-    // 2. 툴바 설정
-    headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridDay'
-    },
-
-    // 3. 공휴일 클래스 설정 (select 함수 밖으로 꺼냄)
-    dayCellClassNames: function(arg) {
-        if (getHolidayName(arg.date)) return ['holiday-day'];
-        return [];
-    },
-
-    // 4. 공휴일 텍스트 표시 (select 함수 밖으로 꺼냄)
-    dayCellContent: function(arg) {
-        const dayNumber = arg.dayNumberText.replace('일', '');
-        const holidayName = getHolidayName(arg.date);
-        if (holidayName && arg.view.type === 'dayGridMonth') {
-            return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
-        }
-        return { html: `<span>${dayNumber}</span>` };
-    },
-
-    // 5. 이벤트 표시 방식
-    eventContent: function(arg) {
-        const start = new Date(arg.event.start);
-        const end = new Date(arg.event.end);
-        const getFormat = (d) => {
-            let h = d.getHours();
-            let m = d.getMinutes();
-            const ampm = h < 12 ? 'A' : 'P';
-            if (h > 12) h -= 12;
-            if (h === 0) h = 12;
-            const mStr = m === 0 ? '' : m; 
-            return `${h}${ampm}${mStr}`;
-        };
-        const timeStr = `${getFormat(start)}~${getFormat(end)}`;
-        const dept = arg.event.title.split(']')[0] + ']'; 
-        return { html: `<div class="fc-event-main-frame" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${timeStr}</b> ${dept}</div>` };
-    },
-
-    // 6. 날짜 클릭했을 때 (select 함수는 여기서 끝납니다)
-    select: function(info) {
-        let sDate = info.startStr.split('T')[0];
-        let eDate = info.endStr.split('T')[0];
-        if (info.startStr.length === 10) {
-            const eObj = new Date(info.endStr);
-            eObj.setDate(eObj.getDate() - 1);
-            eDate = eObj.toISOString().split('T')[0];
-        }
-        setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
-        setSelectedEvent(null);
-        setShowNotice(true);
-    },
-
-    // 7. 이벤트 클릭했을 때
-    eventClick: function(info) {
-        const props = info.event.extendedProps;
-        setSelectedEvent(props);
-        if (DEPARTMENTS.includes(props.dept)) {
-            setDeptSelect(props.dept); setDeptCustom('');
-        } else {
-            setDeptSelect('직접 입력'); setDeptCustom(props.dept);
-        }
-                                setDeptCustom(props.dept);
+                        // 4. 공휴일 텍스트 표시
+                        dayCellContent: function(arg) {
+                            const dayNumber = arg.dayNumberText.replace('일', '');
+                            const holidayName = getHolidayName(arg.date);
+                            if (holidayName && arg.view.type === 'dayGridMonth') {
+                                return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
                             }
+                            return { html: `<span>${dayNumber}</span>` };
+                        },
 
-                            if (['간호부', 'QI(적정진료관리팀)', '총무팀'].includes(props.budget)) {
-                                setBudgetSelect(props.budget);
-                                setBudgetCustom('');
+                        // 5. 이벤트 표시 방식
+                        eventContent: function(arg) {
+                            const start = new Date(arg.event.start);
+                            const end = new Date(arg.event.end);
+                            const getFormat = (d) => {
+                                let h = d.getHours();
+                                let m = d.getMinutes();
+                                const ampm = h < 12 ? 'A' : 'P';
+                                if (h > 12) h -= 12;
+                                if (h === 0) h = 12;
+                                const mStr = m === 0 ? '' : m; 
+                                return `${h}${ampm}${mStr}`;
+                            };
+                            const timeStr = `${getFormat(start)}~${getFormat(end)}`;
+                            const dept = arg.event.title.split(']')[0] + ']'; 
+                            return { html: `<div class="fc-event-main-frame" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${timeStr}</b> ${dept}</div>` };
+                        },
+
+                        // 6. 날짜 클릭 (신규 예약)
+                        select: function(info) {
+                            let sDate = info.startStr.split('T')[0];
+                            let eDate = info.endStr.split('T')[0];
+                            if (info.startStr.length === 10) {
+                                const eObj = new Date(info.endStr);
+                                eObj.setDate(eObj.getDate() - 1);
+                                eDate = eObj.toISOString().split('T')[0];
+                            }
+                            setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
+                            setSelectedEvent(null);
+                            setShowNotice(true);
+                        },
+
+                        // 7. 이벤트 클릭 (수정/취소)
+                        eventClick: function(info) {
+                            const props = info.event.extendedProps;
+                            setSelectedEvent(props);
+                            if (DEPARTMENTS.includes(props.dept)) {
+                                setDeptSelect(props.dept); setDeptCustom('');
                             } else {
-                                setBudgetSelect('기타');
-                                setBudgetCustom(props.budget || '');
+                                setDeptSelect('직접 입력'); setDeptCustom(props.dept);
                             }
-
+                            if (['간호부', 'QI(적정진료관리팀)', '총무팀'].includes(props.budget)) {
+                                setBudgetSelect(props.budget); setBudgetCustom('');
+                            } else {
+                                setBudgetSelect('기타'); setBudgetCustom(props.budget || '');
+                            }
                             const pParts = (props.contact || '').split('-');
                             if (['010', '011', '016'].includes(pParts[0])) {
-                                setPhone1Select(pParts[0] || '010');
-                                setPhone1Custom('');
+                                setPhone1Select(pParts[0] || '010'); setPhone1Custom('');
                             } else {
-                                setPhone1Select('기타');
-                                setPhone1Custom(pParts[0] || '');
+                                setPhone1Select('기타'); setPhone1Custom(pParts[0] || '');
                             }
-                            setPhone2(pParts[1] || '');
-                            setPhone3(pParts[2] || '');
-
+                            setPhone2(pParts[1] || ''); setPhone3(pParts[2] || '');
                             const sDt = props.startTime.split('T');
                             const eDt = props.endTime.split('T');
-
-                            setFormData({
-                                id: props.id, name: props.name, empNo: props.empNo,
-                                startDate: sDt[0], startTimePart: sDt[1].substring(0,5),
-                                endDate: eDt[0], endTimePart: eDt[1].substring(0,5),
-                                purpose: props.purpose, details: props.details
-                            });
+                            setFormData({ id: props.id, name: props.name, empNo: props.empNo, startDate: sDt[0], startTimePart: sDt[1].substring(0,5), endDate: eDt[0], endTimePart: eDt[1].substring(0,5), purpose: props.purpose, details: props.details });
                             setShowForm(true);
                         }
                     });
