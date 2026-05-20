@@ -514,11 +514,23 @@
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 sm:p-4 h-auto relative">
-                            {loading && (
-                                <div className="absolute top-4 right-6 text-xs font-semibold text-blue-600 animate-pulse bg-blue-50 px-3 py-1.5 rounded-full z-20">
-                                    동기화 중...
+                                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 sm:p-4 h-auto relative">
+                            {/* 기존 우측 상단 로딩 제거 */}
+                            <div id="calendar" className="w-full"></div>
+                        </div>
+
+                        {/* 새로운 전체 화면 차단형 로딩 추가 */}
+                        {loading && (
+                            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[9999]">
+                                <div className="bg-white px-6 py-4 rounded-xl shadow-xl flex items-center space-x-3">
+                                    <svg className="animate-spin h-6 w-6 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span className="text-sm font-bold text-blue-700">동기화 중...</span>
                                 </div>
+                            </div>
+                        )}
                             )}
                             <div id="calendar" className="w-full"></div>
                         </div>
@@ -549,7 +561,7 @@
                             ) : (
                                 <p className="text-slate-500 text-sm text-center py-4">예약된 내역이 없습니다.</p>
                             )}
-                            <button onClick={() => { setShowListModal(false); setShowNotice(true); }} className="w-full mt-4 bg-blue-700 text-white p-3 rounded-xl transition hover:bg-blue-800">+ 신규 예약 신청하기</button>
+                            <button onClick={() => { setSelectedEvent(null); setShowListModal(false); setShowNotice(true); }} className="w-full mt-4 bg-blue-700 text-white p-3 rounded-xl transition hover:bg-blue-800 shadow-md font-medium">+ 신규 예약 신청하기</button>
                         </div>
                     </div>
                     )}
