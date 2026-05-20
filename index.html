@@ -118,9 +118,9 @@
 
             // FullCalendar 렌더링 및 동기화
             React.useEffect(() => {
-                if (!user || events.length === 0) return;
+                if (!user) return; // ⭕ 이렇게 고쳐주세요! (데이터가 없어도 무조건 달력을 그리도록 수정)
 
-                const calendarEl = document.getElementById('calendar');
+            const calendarEl = document.getElementById('calendar');
                 if (!calendarEl) return;
 
                 const calendar = new FullCalendar.Calendar(calendarEl, {
