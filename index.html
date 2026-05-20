@@ -229,17 +229,28 @@
 
                         // 6. 날짜 클릭 (신규 예약)
                         select: function(info) {
-                            let sDate = info.startStr.split('T')[0];
-                            let eDate = info.endStr.split('T')[0];
-                            if (info.startStr.length === 10) {
-                                const eObj = new Date(info.endStr);
-                                eObj.setDate(eObj.getDate() - 1);
-                                eDate = eObj.toISOString().split('T')[0];
-                            }
-                            setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
-                            setSelectedEvent(null);
-                            setShowNotice(true);
-                        },
+    let sDate = info.startStr.split('T')[0];
+    let eDate = info.endStr.split('T')[0];
+    if (info.startStr.length === 10) {
+        const eObj = new Date(info.endStr);
+        eObj.setDate(eObj.getDate() - 1);
+        eDate = eObj.toISOString().split('T')[0];
+    }
+    
+    // PC와 모바일 분기 처리
+    if (window.innerWidth < 640) {
+        // [모바일] 목록 모달 먼저 띄우기
+        const dayEvents = events.filter(ev => ev.start.split('T')[0] === sDate);
+        setSelectedDateReservations(dayEvents);
+        setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
+        setShowListModal(true); 
+    } else {
+        // [PC] 기존처럼 바로 유의사항 띄우기
+        setSelectedSlot({ startDate: sDate, endDate: eDate, startTimePart: '09:00', endTimePart: '10:00' });
+        setSelectedEvent(null);
+        setShowNotice(true);
+    }
+},
 
                         // 7. 이벤트 클릭 (수정/취소)
                         eventClick: function(info) {
