@@ -444,7 +444,20 @@ const handleSubmit = async (e) => {
                 }
             };
 
-            const hasPermission = selectedEvent ? (user.isAdmin || String(selectedEvent.empNo) === String(user.empNo)) : true;
+            // [수정된 로직] 사번을 텍스트로 통일하고 공백을 제거하여 비교합니다.
+const hasPermission = React.useMemo(() => {
+    // 1. 신규 예약 신청 모드일 때는 무조건 true (버튼 활성화)
+    if (!selectedEvent) return true; 
+    
+    // 2. 관리자는 무조건 true
+    if (user.isAdmin) return true;
+
+    // 3. 사번을 문자열로 변환하고 양쪽 공백을 제거(.trim())하여 비교
+    const eventEmpNo = String(selectedEvent.empNo || "").trim();
+    const userEmpNo = String(user.empNo || "").trim();
+
+    return eventEmpNo === userEmpNo;
+}, [user, selectedEvent]);
 
             if (!user) {
                 return (
