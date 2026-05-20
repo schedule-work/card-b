@@ -30,17 +30,15 @@
     .holiday-text { color: #ef4444; font-size: 0.7rem; font-weight: 500; margin-top: 2px; } /* 공휴일 명칭 */
     .holiday-day a { color: #ef4444 !important; } /* 공휴일 날짜 빨간색 */
 
-        /* [추가] 모바일 화면 최적화 스타일 */
-@media (max-width: 640px) {
-    .fc .fc-toolbar-title { font-size: 0.9rem !important; }
-    .fc .fc-button { padding: 0.2rem 0.4rem !important; font-size: 0.7rem !important; }
-    .fc-header-toolbar { flex-wrap: wrap; gap: 5px; }
-}
-
-        
+    /* 모바일 화면 최적화 스타일 */
+    @media (max-width: 640px) {
+        .fc .fc-toolbar-title { font-size: 0.9rem !important; }
+        .fc .fc-button { padding: 0.2rem 0.4rem !important; font-size: 0.7rem !important; }
+        .fc-header-toolbar { flex-wrap: wrap; gap: 5px; }
+    }
     </style>
 
-    <!-- [추가] 탭 아이콘 및 모바일 즐겨찾기 아이콘 설정 -->
+    <!-- 탭 아이콘 및 모바일 즐겨찾기 아이콘 설정 -->
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
 </head>
@@ -50,7 +48,7 @@
     <script type="text/babel">
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAhuFd-dWAUOtckSN2c_kThRSTELSf7K0C_BEtqtcklGnmUDRhZHz98eJkAAScWP4vBg/exec";
 
-        // [핵심] 라이브러리 및 하드코딩 하이브리드 공휴일 로직 (하얀 화면 방지 안전장치)
+        // [핵심] 라이브러리 및 하드코딩 하이브리드 공휴일 로직
         let hd = null;
         try {
             const Holiday = window.holidays || window.Holiday || window.DateHolidays;
@@ -104,7 +102,12 @@
             const [events, setEvents] = React.useState([]);
             const [loading, setLoading] = React.useState(false);
             
+            // [오류 수정] 선언되지 않았던 모달 상태 추가
+            const [showListModal, setShowListModal] = React.useState(false);
+            const [selectedDateReservations, setSelectedDateReservations] = React.useState([]);
+            
             const calendarInstanceRef = React.useRef(null);
+            const eventsRef = React.useRef(events); // 최신 events를 참조하기 위한 Ref
             
             const [showNotice, setShowNotice] = React.useState(false);
             const [showForm, setShowForm] = React.useState(false);
@@ -113,10 +116,8 @@
 
             const [deptSelect, setDeptSelect] = React.useState('선택');
             const [deptCustom, setDeptCustom] = React.useState('');
-
             const [budgetSelect, setBudgetSelect] = React.useState('선택');
             const [budgetCustom, setBudgetCustom] = React.useState('');
-
             const [phone1Select, setPhone1Select] = React.useState('010');
             const [phone1Custom, setPhone1Custom] = React.useState('');
             const [phone2, setPhone2] = React.useState('');
@@ -127,9 +128,14 @@
             });
 
             const startRangeStr = "2026-05-01";
-            const maxDate = new Date(2026, 4, 1); // 2026-05-01 기준
-            maxDate.setMonth(maxDate.getMonth() + 2); // 2개월 뒤
+            const maxDate = new Date(2026, 4, 1);
+            maxDate.setMonth(maxDate.getMonth() + 2);
             const maxDateStr = [maxDate.getFullYear(), String(maxDate.getMonth() + 1).padStart(2, '0'), String(maxDate.getDate()).padStart(2, '0')].join('-');
+
+            // events가 변경될 때마다 eventsRef를 업데이트하여 FullCalendar 클로저 문제 방지
+            React.useEffect(() => {
+                eventsRef.current = events;
+            }, [events]);
 
             const fetchBookings = async () => {
                 setLoading(true);
@@ -175,7 +181,6 @@
                     if (!calendarEl || calendarInstanceRef.current) return;
 
                     const calendar = new FullCalendar.Calendar(calendarEl, {
-                        // 1. 기본 설정
                         height: 'auto', 
                         locale: 'ko',
                         selectable: true,
@@ -186,20 +191,17 @@
                         slotMaxTime: '17:30:00',
                         validRange: { start: startRangeStr, end: maxDateStr },
 
-                        // 2. 툴바 설정
                         headerToolbar: {
                             left: 'prev,next today',
                             center: 'title',
                             right: 'dayGridMonth,timeGridDay'
                         },
 
-                        // 3. 공휴일 클래스 설정
                         dayCellClassNames: function(arg) {
                             if (getHolidayName(arg.date)) return ['holiday-day'];
                             return [];
                         },
 
-                        // 4. 공휴일 텍스트 표시
                         dayCellContent: function(arg) {
                             const dayNumber = arg.dayNumberText.replace('일', '');
                             const holidayName = getHolidayName(arg.date);
@@ -209,7 +211,6 @@
                             return { html: `<span>${dayNumber}</span>` };
                         },
 
-                        // 5. 이벤트 표시 방식
                         eventContent: function(arg) {
                             const start = new Date(arg.event.start);
                             const end = new Date(arg.event.end);
@@ -227,31 +228,28 @@
                             return { html: `<div class="fc-event-main-frame" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${timeStr}</b> ${dept}</div>` };
                         },
 
-                        // 6. 날짜 클릭 (신규 예약)
                         select: function(info) {
-    let sDate = info.startStr.split('T')[0];
-    let eDate = info.endStr.split('T')[0];
-    if (info.startStr.length === 10) {
-        const eObj = new Date(info.endStr);
-        eObj.setDate(eObj.getDate() - 1);
-        eDate = eObj.toISOString().split('T')[0];
-    }
-    
-    setSelectedSlot({ startDate: sDate, endDate: eDate });
+                            let sDate = info.startStr.split('T')[0];
+                            let eDate = info.endStr.split('T')[0];
+                            if (info.startStr.length === 10) {
+                                const eObj = new Date(info.endStr);
+                                eObj.setDate(eObj.getDate() - 1);
+                                eDate = eObj.toISOString().split('T')[0];
+                            }
+                            
+                            setSelectedSlot({ startDate: sDate, endDate: eDate });
 
-    if (window.innerWidth < 640) {
-        // [모바일] 클릭한 날짜의 예약만 필터링하여 모달 띄우기
-        const dayEvents = events.filter(ev => ev.start.split('T')[0] === sDate);
-        setSelectedDateReservations(dayEvents);
-        setShowListModal(true); 
-    } else {
-        // [PC] 기존처럼 유의사항 띄우기
-        setSelectedEvent(null);
-        setShowNotice(true);
-    }
-},
+                            if (window.innerWidth < 640) {
+                                // events가 아닌 최신 eventsRef.current를 사용
+                                const dayEvents = eventsRef.current.filter(ev => ev.start.split('T')[0] === sDate);
+                                setSelectedDateReservations(dayEvents);
+                                setShowListModal(true); 
+                            } else {
+                                setSelectedEvent(null);
+                                setShowNotice(true);
+                            }
+                        },
 
-                        // 7. 이벤트 클릭 (수정/취소)
                         eventClick: function(info) {
                             const props = info.event.extendedProps;
                             setSelectedEvent(props);
@@ -273,21 +271,20 @@
                             }
                             setPhone2(pParts[1] || ''); setPhone3(pParts[2] || '');
                             
-                            
                             const start = new Date(props.startTime);
-    const end = new Date(props.endTime);
-    const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    const toTimeStr = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+                            const end = new Date(props.endTime);
+                            const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                            const toTimeStr = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 
-    setFormData({ 
-        id: props.id, name: props.name, empNo: props.empNo, 
-        startDate: toDateStr(start), startTimePart: toTimeStr(start), 
-        endDate: toDateStr(end), endTimePart: toTimeStr(end), 
-        purpose: props.purpose, details: props.details 
-    });
-    setShowListModal(false); // 리스트 모달이 떠있을 수 있으니 닫기
-    setShowForm(true);
-},
+                            setFormData({ 
+                                id: props.id, name: props.name, empNo: props.empNo, 
+                                startDate: toDateStr(start), startTimePart: toTimeStr(start), 
+                                endDate: toDateStr(end), endTimePart: toTimeStr(end), 
+                                purpose: props.purpose, details: props.details 
+                            });
+                            setShowListModal(false); 
+                            setShowForm(true);
+                        },
                     });
 
                     calendar.render();
@@ -311,29 +308,27 @@
             }, [events]);
 
             const confirmNotice = () => {
-    setShowNotice(false);
-    setDeptSelect('선택'); setDeptCustom(''); 
-    setBudgetSelect('선택'); setBudgetCustom(''); 
-    setPhone1Select('010'); setPhone1Custom('');
-    setPhone2(''); setPhone3('');
+                setShowNotice(false);
+                setDeptSelect('선택'); setDeptCustom(''); 
+                setBudgetSelect('선택'); setBudgetCustom(''); 
+                setPhone1Select('010'); setPhone1Custom('');
+                setPhone2(''); setPhone3('');
 
-    setFormData({
-        id: '', name: user.name, empNo: user.empNo,
-        // [수정됨] 빈칸이 아니라, 사용자가 클릭한 selectedSlot.startDate를 가져옴
-        startDate: selectedSlot.startDate, 
-        startTimePart: '', 
-        endDate: '', // 반납일은 사용자가 직접 선택하게 둠
-        endTimePart: '', 
-        purpose: '', details: ''
-    });
-    setShowForm(true);
-};
+                setFormData({
+                    id: '', name: user.name, empNo: user.empNo,
+                    startDate: selectedSlot.startDate, 
+                    startTimePart: '', 
+                    endDate: '', 
+                    endTimePart: '', 
+                    purpose: '', details: ''
+                });
+                setShowForm(true);
+            };
 
-            // 1. 날짜 검증 함수 (주말, 공휴일 체크)
             const isAvailableDate = (dateStr) => {
                 if (!dateStr) return false;
                 const date = new Date(dateStr + "T00:00:00"); 
-                const day = date.getDay(); // 0:일요일, 6:토요일
+                const day = date.getDay(); 
                 
                 if (day === 0 || day === 6) return false;
                 if (typeof getHolidayName === 'function' && getHolidayName(date)) return false;
@@ -341,7 +336,6 @@
                 return true;
             };
 
-            // 2. 새로운 handleSubmit 함수 (제출 로직)
             const handleSubmit = async (e) => {
                 e.preventDefault();
 
@@ -355,7 +349,6 @@
                     return alert("대여/반납 예정일 및 시간을 모두 선택해주세요.");
                 }
 
-                // 🚨 방금 위에서 만든 날짜 검증 함수를 여기서 사용합니다.
                 if (!isAvailableDate(formData.startDate)) return alert("대여 시작일은 주말 및 공휴일을 제외한 평일만 선택 가능합니다.");
                 if (!isAvailableDate(formData.endDate)) return alert("반납 예정일은 주말 및 공휴일을 제외한 평일만 선택 가능합니다.");
 
@@ -439,20 +432,13 @@
                 }
             };
 
-            // [수정된 로직] 사번을 텍스트로 통일하고 공백을 제거하여 비교합니다.
-const hasPermission = React.useMemo(() => {
-    // 1. 신규 예약 신청 모드일 때는 무조건 true (버튼 활성화)
-    if (!selectedEvent) return true; 
-    
-    // 2. 관리자는 무조건 true
-    if (user.isAdmin) return true;
-
-    // 3. 사번을 문자열로 변환하고 양쪽 공백을 제거(.trim())하여 비교
-    const eventEmpNo = String(selectedEvent.empNo || "").trim();
-    const userEmpNo = String(user.empNo || "").trim();
-
-    return eventEmpNo === userEmpNo;
-}, [user, selectedEvent]);
+            const hasPermission = React.useMemo(() => {
+                if (!selectedEvent) return true; 
+                if (user.isAdmin) return true;
+                const eventEmpNo = String(selectedEvent.empNo || "").trim();
+                const userEmpNo = String(user.empNo || "").trim();
+                return eventEmpNo === userEmpNo;
+            }, [user, selectedEvent]);
 
             if (!user) {
                 return (
@@ -481,27 +467,25 @@ const hasPermission = React.useMemo(() => {
             return (
                 <div className="min-h-screen bg-slate-50 text-slate-800">
                     <header className="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center flex-wrap gap-2 sticky top-0 z-10 shadow-sm">
-    <div className="flex items-center space-x-3">
-        <span className="text-lg font-bold text-slate-900 tracking-tight">Booking</span>
-    </div>
+                        <div className="flex items-center space-x-3">
+                            <span className="text-lg font-bold text-slate-900 tracking-tight">Booking</span>
+                        </div>
                         <div className="text-sm text-slate-600 flex items-center space-x-4">
                             <span><strong>{user.name}</strong> 님 반갑습니다.</span>
                             
-                            {/* 새로고침 버튼 */}
                             <button onClick={fetchBookings} className="flex items-center space-x-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition border border-slate-200 shadow-sm">
                                 <span>🔄 새로고침</span>
                             </button>
                             
-                            <button onClick={() => setUser(null)} className="...">로그아웃</button>
+                            <button onClick={() => setUser(null)} className="text-blue-600 hover:underline">로그아웃</button>
                         </div>
                     </header>
 
-                    {/* 달력 영역 확장 (max-w-[1600px] w-[95%]) */}
                     <main className="max-w-7xl mx-auto p-2 sm:p-8">
                         <div className="mb-6 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start space-x-3">
                             <div className="text-blue-600 mt-0.5 shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5">
-                                  <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 0 1 .67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 1 1-.671-1.34l.041-.022ZM12 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
+                                    <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 0 1 .67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 1 1-.671-1.34l.041-.022ZM12 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
                                 </svg>
                             </div>
                             <div className="text-xs sm:text-sm text-blue-800 space-y-1">
@@ -510,18 +494,18 @@ const hasPermission = React.useMemo(() => {
                                     <li>예약은 최대 <strong>2개월 후</strong>까지만 가능합니다.</li>
                                     <li><strong>원활한 법인카드 사용을 위하여 3일 초과 장기 예약은 제한</strong>됩니다.</li>
                                 </ul>
-                                </div>
-</div>
+                            </div>
+                        </div>
 
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 sm:p-4 h-auto relative">
-        {loading && (
-            <div className="absolute top-4 right-6 text-xs font-semibold text-blue-600 animate-pulse bg-blue-50 px-3 py-1.5 rounded-full z-20">
-                동기화 중...
-            </div>
-        )}
-        <div id="calendar" className="w-full"></div>
-    </div>
-</main>
+                            {loading && (
+                                <div className="absolute top-4 right-6 text-xs font-semibold text-blue-600 animate-pulse bg-blue-50 px-3 py-1.5 rounded-full z-20">
+                                    동기화 중...
+                                </div>
+                            )}
+                            <div id="calendar" className="w-full"></div>
+                        </div>
+                    </main>
 
                     {showListModal && (
                     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -529,17 +513,17 @@ const hasPermission = React.useMemo(() => {
                             <h3 className="font-bold mb-4">{selectedSlot?.startDate} 예약 목록</h3>
                             {selectedDateReservations.length > 0 ? (
                                 selectedDateReservations.map(ev => (
-                                    <div key={ev.id} onClick={() => { setSelectedEvent(ev.extendedProps); setShowListModal(false); setShowForm(true); }} className="p-2 border-b cursor-pointer">
-                                        {ev.title} ({ev.start.split('T')[1].substring(0,5)})
+                                    <div key={ev.id} onClick={() => { setSelectedEvent(ev.extendedProps); setShowListModal(false); setShowForm(true); }} className="p-3 border-b hover:bg-slate-50 cursor-pointer text-sm">
+                                        <span className="font-semibold text-blue-700">{ev.title}</span> <span className="text-slate-500">({ev.start.split('T')[1].substring(0,5)})</span>
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-gray-500 text-sm">예약된 내역이 없습니다.</p>
+                                <p className="text-slate-500 text-sm text-center py-4">예약된 내역이 없습니다.</p>
                             )}
-                            <button onClick={() => { setShowListModal(false); setShowNotice(true); }} className="w-full mt-4 bg-blue-700 text-white p-3 rounded-xl">+ 신규 예약 신청하기</button>
+                            <button onClick={() => { setShowListModal(false); setShowNotice(true); }} className="w-full mt-4 bg-blue-700 text-white p-3 rounded-xl transition hover:bg-blue-800">+ 신규 예약 신청하기</button>
                         </div>
                     </div>
-                )}
+                    )}
                     
                     {showNotice && (
                         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
