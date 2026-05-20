@@ -757,11 +757,8 @@
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        // 기존 root.render 부분 삭제하고 아래 코드로 교체하세요
-window.addEventListener('load', () => {
-    const rootElement = document.getElementById('root');
-    if (rootElement) {
-        const root = ReactDOM.createRoot(rootElement);
-        root.render(<App />);
+        const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(<App />);
     }
 });
