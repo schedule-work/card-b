@@ -174,30 +174,6 @@
             "2027-01-01": "신정", "2027-02-06": "설날 연휴", "2027-02-07": "설날", "2027-02-08": "설날 연휴", "2027-02-09": "대체공휴일", "2027-03-01": "삼일절", "2027-05-05": "어린이날", "2027-05-13": "부처님오신날", "2027-06-06": "현충일", "2027-08-15": "광복절", "2027-09-14": "추석 연휴", "2027-09-15": "추석", "2027-09-16": "추석 연휴", "2027-10-03": "개천절", "2027-10-09": "한글날", "2027-12-25": "기독탄신일"
         };
 
-        const getHolidayName = (dateObj) => {
-            const dateStr = [
-                dateObj.getFullYear(),
-                String(dateObj.getMonth() + 1).padStart(2, '0'),
-                String(dateObj.getDate()).padStart(2, '0')
-            ].join('-');
-
-            // 1. 서버에서 가져온 공휴일 데이터 확인
-            if (customHolidays && customHolidays[dateStr]) return customHolidays[dateStr];
-
-            // 2. 제헌절 체크
-            if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) return "제헌절";
-
-            // 3. 라이브러리 체크
-            if (hd) {
-                const res = hd.isHoliday(dateObj);
-                if (res && Array.isArray(res)) {
-                    const publicH = res.find(h => h.type === 'public' || h.type === 'bank');
-                    if (publicH) return publicH.name;
-                }
-            }
-            return FALLBACK_HOLIDAYS[dateStr] || null;
-        };
-
         const DEPARTMENTS = [
             "응급전용병동", "51병동", "52병동", "53병동", "60병동", "61병동", "62병동", "63병동", "65병동", "70병동",
             "71병동", "72병동", "73병동", "80병동", "81병동", "82병동", "83병동", "85병동", "90병동", "91병동",
@@ -214,13 +190,36 @@
 
         function App() {
             const [user, setUser] = React.useState(() => {
-                // 저장된 로그인 정보가 있으면 불러오고, 없으면 null을 반환합니다.
                 const saved = sessionStorage.getItem('cardPortalUser');
                 return saved ? JSON.parse(saved) : null;
             });
             const [loginInput, setLoginInput] = React.useState({ name: '', empNo: '' });
             const [events, setEvents] = React.useState([]);
             const [customHolidays, setCustomHolidays] = React.useState({});
+            const customHolidaysRef = React.useRef(customHolidays);
+            React.useEffect(() => {
+                customHolidaysRef.current = customHolidays;
+            }, [customHolidays]);
+            const getHolidayName = (dateObj) => {
+                const dateStr = [
+                    dateObj.getFullYear(),
+                    String(dateObj.getMonth() + 1).padStart(2, '0'),
+                    String(dateObj.getDate()).padStart(2, '0')
+                ].join('-');
+
+            if (customHolidaysRef.current && customHolidaysRef.current[dateStr]) return customHolidays[dateStr];
+
+            if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) return "제헌절";
+            if (hd) {
+                const res = hd.isHoliday(dateObj);
+                if (res && Array.isArray(res)) {
+                    const publicH = res.find(h => h.type === 'public' || h.type === 'bank');
+                    if (publicH) return publicH.name;
+                }
+            }
+            return FALLBACK_HOLIDAYS[dateStr] || null;
+        };
+            
             const [loading, setLoading] = React.useState(false);
 
             const [showListModal, setShowListModal] = React.useState(false);
@@ -326,17 +325,7 @@
             React.useEffect(() => {
                 if (!user) return;
                 if (!calendarContainerRef.current) return;
-                if (typeof FullCalendar === 'undefined') {
-                    console.error("FullCalendar가 로드되지 않았습니다.");
-                    return;
-                }
-
-                const timer = setTimeout(() => {
-                    const calendarEl = document.getElementById('calendar');
-                    if (!calendarEl || calendarInstanceRef.current) return;
-
-                    let lastSelectedStr = null;
-                    let unselectTimer = null;
+                if (calendarInstanceRef.current) return;
 
                     const calendar = new FullCalendar.Calendar(calendarContainerRef.current, {
                         height: '100%',
@@ -504,7 +493,6 @@
 
                     calendar.render();
                     calendarInstanceRef.current = calendar;
-                }, 150);
 
                 return () => {
                     if (calendarInstanceRef.current) {
