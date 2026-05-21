@@ -316,7 +316,6 @@
                 }
 
                 // 5. 로그인 처리
-                const isSuperAdmin = trimmedName.toUpperCase().includes("DNS") && empNo === "1606";
                 const loggedInUser = { name: trimmedName, empNo: empNo, isAdmin: isSuperAdmin };
 
                 setUser(loggedInUser);
