@@ -520,6 +520,7 @@
             React.useEffect(() => {
                 if (calendarInstanceRef.current) {
                     calendarInstanceRef.current.render();
+                    calendarInstanceRef.current.refetchEvents();
                 }
             }, [customHolidays]);
 
