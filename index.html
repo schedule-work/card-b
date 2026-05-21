@@ -519,8 +519,17 @@
 
             React.useEffect(() => {
                 if (calendarInstanceRef.current) {
+                    calendarInstanceRef.current.setOption('dayCellContent', (arg) => {
+                        const dayNumber = arg.dayNumberText.replace('일', '');
+                        const holidayName = getHolidayName(arg.date);
+
+                        if (holidayName && arg.view.type === 'dayGridMonth') {
+                            return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
+                        }
+                        return { html: `<span>${dayNumber}</span>` };
+                    });
+                    
                     calendarInstanceRef.current.render();
-                    calendarInstanceRef.current.refetchEvents();
                 }
             }, [customHolidays]);
 
