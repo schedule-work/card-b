@@ -219,6 +219,7 @@
             const [selectedDateReservations, setSelectedDateReservations] = React.useState([]);
 
             const calendarInstanceRef = React.useRef(null);
+            const lastSelectedRef = React.useRef(null);
             const eventsRef = React.useRef(events);
 
             const [showNotice, setShowNotice] = React.useState(false);
@@ -266,21 +267,43 @@
             const handleLogin = (e) => {
                 e.preventDefault();
 
-                if (loginInput.empNo.length !== 5) {
-                    alert("사번은 반드시 5자리여야 합니다.");
-                    return; // 조건에 맞지 않으면 아래의 로그인 로직을 실행하지 않고 함수를 종료합니다.
-                }
                 const trimmedName = loginInput.name.trim();
-                const trimmedEmpNo = loginInput.empNo.trim();
-                if (!trimmedName || !trimmedEmpNo) {
+                const empNo = loginInput.empNo.trim().toUpperCase();
+
+                // 1. 기본 길이 체크
+                if (empNo.length !== 5) {
+                    alert("사번은 반드시 5자리여야 합니다.");
+                    return;
+                }
+
+                // 2. 사번 구조 검증 (숫자2 + [영문/숫자1] + 숫자2)
+                const empNoRegex = /^[0-9]{2}[A-Z0-9]{1}[0-9]{2}$/;
+                if (!empNoRegex.test(empNo)) {
+                    alert("사번 형식이 올바르지 않습니다.");
+                    return;
+                }
+
+                // 3. 연도 범위 검증 (83~99 및 00~올해)
+                const yearPart = parseInt(empNo.substring(0, 2), 10);
+                const currentYearShort = new Date().getFullYear() % 100;
+                const isYearValid = (yearPart >= 83 && yearPart <= 99) || (yearPart >= 0 && yearPart <= currentYearShort);
+
+                if (!isYearValid) {
+                    alert(`유효하지 않은 사번입니다.\n(입사 연도 확인: 83~99년생, 00~${String(currentYearShort).padStart(2, '0')}년생)`);
+                    return;
+                }
+
+                // 4. 이름/사번 누락 체크
+                if (!trimmedName || !empNo) {
                     alert("이름과 사번을 정확히 입력해주세요.");
                     return;
                 }
-                const isSuperAdmin = trimmedName.toUpperCase().includes("DNS") && trimmedEmpNo === "1606";
-                const loggedInUser = { name: trimmedName, empNo: trimmedEmpNo, isAdmin: isSuperAdmin };
+
+                // 5. 로그인 처리
+                const isSuperAdmin = trimmedName.toUpperCase().includes("DNS") && empNo === "1606";
+                const loggedInUser = { name: trimmedName, empNo: empNo, isAdmin: isSuperAdmin };
 
                 setUser(loggedInUser);
-                // 로그인 성공 시 세션 스토리지에 정보를 저장합니다.
                 sessionStorage.setItem('cardPortalUser', JSON.stringify(loggedInUser));
             };
 
@@ -369,86 +392,67 @@
                         },
 
                         unselect: function () {
-                            // 사용자가 다른 곳을 클릭해 선택이 해제되면 초기화
-                            // (단, 같은 날짜를 다시 눌렀을 때 초기화되는 것을 막기 위해 0.1초 지연)
-                            unselectTimer = setTimeout(() => {
-                                lastSelectedStr = null;
-                            }, 100);
-                        },
+    // 선택 해제 시 즉시 null로 초기화하여 팝업이 중복으로 뜨는 문제 해결
+    lastSelectedRef.current = null;
+},
 
-                        select: function (info) {
-                            clearTimeout(unselectTimer); // 같은 날짜를 클릭했을 때 unselect 타이머가 작동하는 것을 방지
+select: function (info) {
+    const currentSelectedStr = info.startStr;
 
-                            const currentSelectedStr = info.startStr + "_" + info.endStr;
+    // 1. 첫 번째 클릭: 날짜 선택 (파란 테두리 표시)
+    if (lastSelectedRef.current !== currentSelectedStr) {
+        lastSelectedRef.current = currentSelectedStr;
+        return; 
+    }
 
-                            // 1. 첫 번째 클릭인 경우 (새로운 날짜를 누름)
-                            if (lastSelectedStr !== currentSelectedStr) {
-                                lastSelectedStr = currentSelectedStr;
-                                return; // 아무 팝업도 띄우지 않고 함수를 끝냄 (파란 테두리 효과만 남음)
-                            }
+    // 2. 두 번째 클릭: 동작 수행 (팝업 또는 폼 열기)
+    lastSelectedRef.current = null; // 초기화
+    
+    // 유효성 검사 (과거/미래 날짜)
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const maxSelectDate = new Date(); maxSelectDate.setMonth(maxSelectDate.getMonth() + 2);
+    const selectStart = new Date(info.startStr + "T00:00:00");
 
-                            // 2. 두 번째 클릭인 경우 (이미 파란 테두리가 있는 날짜를 다시 누름)
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
+    if (selectStart < today) {
+        alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
+        calendar.unselect();
+        return;
+    }
+    if (selectStart > maxSelectDate) {
+        alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
+        calendar.unselect();
+        return;
+    }
 
-                            const maxSelectDate = new Date();
-                            maxSelectDate.setHours(0, 0, 0, 0);
-                            maxSelectDate.setMonth(maxSelectDate.getMonth() + 2);
+    // 날짜 포맷 변환
+    let sDate = info.startStr.split('T')[0];
+    let eDate = (info.endStr && info.endStr.length === 10) 
+        ? new Date(new Date(info.endStr).getTime() - 86400000).toISOString().split('T')[0] 
+        : info.endStr.split('T')[0];
 
-                            const selectStart = new Date(info.startStr + "T00:00:00");
+    setSelectedSlot({ startDate: sDate, endDate: eDate });
 
-                            if (selectStart < today) {
-                                alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
-                                info.view.calendar.unselect();
-                                lastSelectedStr = null;
-                                return;
-                            }
+    // 동작 수행 (모바일/PC 분기)
+    if (window.innerWidth < 640) {
+        const allFcEvents = calendar.getEvents();
+        const clickedTime = new Date(sDate + "T00:00:00").getTime();
+        const nextDayTime = clickedTime + (24 * 60 * 60 * 1000);
 
-                            if (selectStart > maxSelectDate) {
-                                alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
-                                info.view.calendar.unselect();
-                                lastSelectedStr = null;
-                                return;
-                            }
-
-                            let sDate = info.startStr.split('T')[0];
-                            let eDate = info.endStr.split('T')[0];
-                            if (info.startStr.length === 10) {
-                                const eObj = new Date(info.endStr);
-                                eObj.setDate(eObj.getDate() - 1);
-                                eDate = eObj.toISOString().split('T')[0];
-                            }
-
-                            setSelectedSlot({ startDate: sDate, endDate: eDate });
-
-                            if (window.innerWidth < 640) {
-                                const allFcEvents = info.view.calendar.getEvents();
-                                const clickedTime = new Date(sDate + "T00:00:00").getTime();
-                                const nextDayTime = clickedTime + (24 * 60 * 60 * 1000);
-
-                                const dayEvents = allFcEvents.filter(ev => {
-                                    if (!ev.start || !ev.end) return false;
-                                    const evStart = ev.start.getTime();
-                                    const evEnd = ev.end.getTime();
-                                    return (evStart < nextDayTime) && (evEnd > clickedTime);
-                                }).map(ev => ({
-                                    id: ev.id,
-                                    title: ev.title,
-                                    startObj: ev.start,
-                                    endObj: ev.end,
-                                    extendedProps: ev.extendedProps
-                                }));
-
-                                setSelectedDateReservations(dayEvents);
-                                setShowListModal(true);
-                            } else {
-                                setSelectedEvent(null);
-                                setShowNotice(true);
-                            }
-
-                            lastSelectedStr = null;
-                        },
-
+        const dayEvents = allFcEvents.filter(ev => {
+            return (ev.start.getTime() < nextDayTime) && (ev.end.getTime() > clickedTime);
+        }).map(ev => ({
+            id: ev.id, title: ev.title, startObj: ev.start, endObj: ev.end, extendedProps: ev.extendedProps
+        }));
+        
+        setSelectedDateReservations(dayEvents);
+        setShowListModal(true);
+    } else {
+        setSelectedEvent(null);
+        setShowNotice(true);
+    }
+    
+    calendar.unselect(); // 선택 해제
+},
                         eventClick: function (info) {
                             const props = info.event.extendedProps;
                             setSelectedEvent(props);
