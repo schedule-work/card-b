@@ -517,6 +517,12 @@
                 }
             }, [events]);
 
+            React.useEffect(() => {
+                if (calendarInstanceRef.current) {
+                    calendarInstanceRef.current.render();
+                }
+            }, [customHolidays]);
+
             const confirmNotice = () => {
                 setShowNotice(false);
                 setDeptSelect('선택'); setDeptCustom('');
@@ -999,7 +1005,12 @@
                                                                 method: 'POST',
                                                                 body: JSON.stringify({ action: "TOGGLE_HOLIDAY", date: selectedSlot.startDate, name: name })
                                                             });
+
                                                             await fetchBookings();
+                                                            if (calendarInstanceRef.current) {
+                                                                calendarInstanceRef.current.removeAllEvents();
+                                                                calendarInstanceRef.current.addEventSource(eventsRef.current);
+                                                            }
                                                             
                                                             setTimeout(() => {
                                                                 calendarInstanceRef.current?.render();
