@@ -519,9 +519,28 @@
 
             React.useEffect(() => {
                 if (calendarInstanceRef.current) {
-                    calendarInstanceRef.current.setOption('dayCellContent', (arg) => {
+
+                    calendarInstanceRef.current.setOption('dayCellClassNames', function (arg) {
+                        const yyyy = arg.date.getFullYear();
+                        const mm = String(arg.date.getMonth() + 1).padStart(2, '0');
+                        const dd = String(arg.date.getDate()).padStart(2, '0');
+                        const dateStr = `${yyyy}-${mm}-${dd}`;
+
+                        if (customHolidays[dateStr] || getHolidayName(arg.date)) {
+                            return ['holiday-day'];
+                        }
+                        return [];
+                    });
+                    
+                    calendarInstanceRef.current.setOption('dayCellContent', function (arg) {
                         const dayNumber = arg.dayNumberText.replace('일', '');
-                        const holidayName = getHolidayName(arg.date);
+                        const yyyy = arg.date.getFullYear();
+                        const mm = String(arg.date.getMonth() + 1).padStart(2, '0');
+                        const dd = String(arg.date.getDate()).padStart(2, '0');
+                        const dateStr = `${yyyy}-${mm}-${dd}`;
+
+                        // Ref 타이밍 문제를 방지하기 위해 최신 상태값에서 직접 공휴일 이름을 가져옴
+                        const holidayName = customHolidays[dateStr] || getHolidayName(arg.date);
 
                         if (holidayName && arg.view.type === 'dayGridMonth') {
                             return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
@@ -529,6 +548,7 @@
                         return { html: `<span>${dayNumber}</span>` };
                     });
                     
+                    // 3. 설정을 마친 후 달력을 즉시 리렌더링
                     calendarInstanceRef.current.render();
                 }
             }, [customHolidays]);
