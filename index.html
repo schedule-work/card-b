@@ -331,27 +331,6 @@
                         // 기존 validRange 아래에 이어서 붙여넣으세요
                         validRange: { start: '2026-05-01' },
 
-                        selectAllow: function (selectInfo) {
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-
-                            const maxSelectDate = new Date();
-                            maxSelectDate.setHours(0, 0, 0, 0);
-                            maxSelectDate.setMonth(maxSelectDate.getMonth() + 2); // 2개월 뒤
-
-                            const selectStart = new Date(selectInfo.startStr + "T00:00:00");
-
-                            // [조건 1] 과거 날짜인 경우
-                            if (selectStart < today) return false;
-
-                            // [조건 2] 2개월을 초과한 경우
-                            if (selectStart > maxSelectDate) return false;
-
-                            // 3. 주말 및 공휴일 체크 (기존에 만드신 함수 재사용)
-                            if (!isAvailableDate(selectInfo.startStr.split('T')[0])) return false;
-
-                            return true; // 허용
-                        },
                         headerToolbar: {
                             left: 'prev,next today',
                             center: 'title',
