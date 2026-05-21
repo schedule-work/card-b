@@ -175,28 +175,27 @@
         };
 
         const getHolidayName = (dateObj) => {
-            const dateStr = [dateObj.getFullYear(), String(dateObj.getMonth() + 1).padStart(2, '0'), String(dateObj.getDate()).padStart(2, '0')].join('-');
-                dateObj.getFullYear(),
-                String(dateObj.getMonth() + 1).padStart(2, '0'),
-                String(dateObj.getDate()).padStart(2, '0')
-            ].join('-');
-            
-            if (customHolidays[dateStr]) return customHolidays[dateStr];
-            
-            if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) {
-                return "제헌절";
-            }
+    const dateStr = [
+        dateObj.getFullYear(),
+        String(dateObj.getMonth() + 1).padStart(2, '0'),
+        String(dateObj.getDate()).padStart(2, '0')
+    ].join('-');
 
-            if (hd) {
-                const res = hd.isHoliday(dateObj);
-                if (res && Array.isArray(res)) {
-                    const publicH = res.find(h => h.type === 'public' || h.type === 'bank');
-                    if (publicH) return publicH.name;
-                }
-            }
+    if (customHolidays[dateStr]) return customHolidays[dateStr];
+    
+    if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) {
+        return "제헌절";
+    }
 
-            return FALLBACK_HOLIDAYS[dateStr] || null;
-        };
+    if (hd) {
+        const res = hd.isHoliday(dateObj);
+        if (res && Array.isArray(res)) {
+            const publicH = res.find(h => h.type === 'public' || h.type === 'bank');
+            if (publicH) return publicH.name;
+        }
+    }
+    return FALLBACK_HOLIDAYS[dateStr] || null;
+};
 
         const DEPARTMENTS = [
             "응급전용병동", "51병동", "52병동", "53병동", "60병동", "61병동", "62병동", "63병동", "65병동", "70병동",
