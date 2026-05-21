@@ -993,7 +993,12 @@
                                                                 method: 'POST',
                                                                 body: JSON.stringify({ action: "TOGGLE_HOLIDAY", date: selectedSlot.startDate, name: name })
                                                             });
-                                                            await fetchBookings(); // 데이터 새로고침
+                                                            await fetchBookings();
+                                                            
+                                                            setTimeout(() => {
+                                                                calendarInstanceRef.current?.render();
+                                                            }, 100);
+                                                            
                                                             setShowForm(false);
                                                             alert(isHoliday ? "공휴일이 해제되었습니다." : "공휴일로 지정되었습니다.");
                                                         } catch (e) {
