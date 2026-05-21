@@ -175,27 +175,28 @@
         };
 
         const getHolidayName = (dateObj) => {
-    const dateStr = [
-        dateObj.getFullYear(),
-        String(dateObj.getMonth() + 1).padStart(2, '0'),
-        String(dateObj.getDate()).padStart(2, '0')
-    ].join('-');
+            const dateStr = [
+                dateObj.getFullYear(),
+                String(dateObj.getMonth() + 1).padStart(2, '0'),
+                String(dateObj.getDate()).padStart(2, '0')
+            ].join('-');
 
-    if (customHolidays[dateStr]) return customHolidays[dateStr];
-    
-    if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) {
-        return "제헌절";
-    }
+            // 1. 서버에서 가져온 공휴일 데이터 확인
+            if (customHolidays && customHolidays[dateStr]) return customHolidays[dateStr];
 
-    if (hd) {
-        const res = hd.isHoliday(dateObj);
-        if (res && Array.isArray(res)) {
-            const publicH = res.find(h => h.type === 'public' || h.type === 'bank');
-            if (publicH) return publicH.name;
-        }
-    }
-    return FALLBACK_HOLIDAYS[dateStr] || null;
-};
+            // 2. 제헌절 체크
+            if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) return "제헌절";
+
+            // 3. 라이브러리 체크
+            if (hd) {
+                const res = hd.isHoliday(dateObj);
+                if (res && Array.isArray(res)) {
+                    const publicH = res.find(h => h.type === 'public' || h.type === 'bank');
+                    if (publicH) return publicH.name;
+                }
+            }
+            return FALLBACK_HOLIDAYS[dateStr] || null;
+        };
 
         const DEPARTMENTS = [
             "응급전용병동", "51병동", "52병동", "53병동", "60병동", "61병동", "62병동", "63병동", "65병동", "70병동",
@@ -340,7 +341,7 @@
                         allDaySlot: false,
                         slotMinTime: '08:30:00',
                         slotMaxTime: '17:30:00',
-                        // 기존 validRange 아래에 이어서 붙여넣으세요
+
                         validRange: { start: '2026-05-01' },
 
                         headerToolbar: {
@@ -995,8 +996,8 @@
                                                         }
                                                     }}
                                                     className={`px-4 py-2.5 rounded-xl text-sm font-medium transition ${!!customHolidays[selectedSlot.startDate]
-                                                            ? "bg-amber-600 hover:bg-amber-700 text-white"
-                                                            : "bg-purple-600 hover:bg-purple-700 text-white"
+                                                        ? "bg-amber-600 hover:bg-amber-700 text-white"
+                                                        : "bg-purple-600 hover:bg-purple-700 text-white"
                                                         }`}
                                                 >
                                                     {customHolidays[selectedSlot.startDate] ? "공휴일 해제" : "공휴일 지정"}
