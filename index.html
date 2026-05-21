@@ -207,7 +207,9 @@
                     String(dateObj.getDate()).padStart(2, '0')
                 ].join('-');
 
-            if (customHolidaysRef.current && customHolidaysRef.current[dateStr]) return customHolidays[dateStr];
+            if (customHolidaysRef.current && customHolidaysRef.current[dateStr]) {
+                return customHolidaysRef.current[dateStr];
+            }
 
             if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) return "제헌절";
             if (hd) {
@@ -564,12 +566,27 @@
                     return;
                 }
 
-                const diffTime = Math.abs(newEnd - newStart);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays > 3) {
-                    alert("원활한 카드 사용을 위해 장기 예약은 최대 3일까지만 가능합니다.");
-                    return;
+                let validDaysCount = 0;
+                let tempDate = new Date(`${formData.startDate}T00:00:00`);
+                const endDateLimit = new Date(`${formData.endDate}T00:00:00`);
+
+                while (tempDate <= endDateLimit) {
+                    const yyyy = tempDate.getFullYear();
+                    const mm = String(tempDate.getMonth() + 1).padStart(2, '0');
+                    const dd = String(tempDate.getDate()).padStart(2, '0');
+                    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+                    if (isAvailableDate(dateStr)) {
+                        validDaysCount++;
+                    }
+    
+                    tempDate.setDate(tempDate.getDate() + 1);
                 }
+
+                    if (validDaysCount > 3) {
+                        alert("원활한 카드 사용을 위해 장기 예약은 최대 3일(영업일 기준)까지만 가능합니다.");
+                        return;
+                    }
 
                 const isOverlap = events.some(ev => {
                     if (formData.id && String(ev.id) === String(formData.id)) return false;
