@@ -398,17 +398,19 @@
                             const maxSelectDate = new Date(); maxSelectDate.setMonth(maxSelectDate.getMonth() + 2);
                             const selectStart = new Date(info.startStr + "T00:00:00");
 
-                            if (selectStart < today) {
-                                alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
-                                calendarInstanceRef.current.unselect()
-                                lastSelectedRef.current = null;
-                                return;
-                            }
-                            if (selectStart > maxSelectDate) {
-                                alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
-                                calendarInstanceRef.current.unselect()
-                                lastSelectedRef.current = null;
-                                return;
+                            if (!user.isAdmin) {
+                                if (selectStart < today) {
+                                    alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
+                                    calendarInstanceRef.current.unselect()
+                                    lastSelectedRef.current = null;
+                                    return;
+                                }
+                                if (selectStart > maxSelectDate) {
+                                    alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
+                                    calendarInstanceRef.current.unselect()
+                                    lastSelectedRef.current = null;
+                                    return;
+                                }
                             }
 
                             if (!isAvailableDate(info.startStr.split('T')[0])) {
@@ -495,6 +497,10 @@
 
                     calendar.render();
                     calendarInstanceRef.current = calendar;
+
+                    setTimeout(() => {
+                        calendar.updateSize();
+                    }, 100);
 
                 return () => {
                     if (calendarInstanceRef.current) {
