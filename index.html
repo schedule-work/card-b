@@ -395,6 +395,7 @@
                         },
 
                         select: function (info) {
+                            const calendar = info.view.calendar;
                             const currentSelectedStr = info.startStr;
 
                             // 1. 첫 번째 클릭: 날짜 선택 (파란 테두리 표시)
@@ -413,25 +414,26 @@
 
                             if (selectStart < today) {
                                 alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
-                                calendar.unselect()
+                                calendarInstanceRef.current.unselect()
                                 lastSelectedRef.current = null;
                                 return;
                             }
                             if (selectStart > maxSelectDate) {
                                 alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
-                                calendar.unselect()
+                                calendarInstanceRef.current.unselect()
                                 lastSelectedRef.current = null;
                                 return;
                             }
 
                             if (!isAvailableDate(info.startStr.split('T')[0])) {
                                 alert("⚠️ 주말 및 공휴일은 예약할 수 없습니다.");
-                                info.view.calendar.unselect();
+                                calendarInstanceRef.current.unselect();
                                 lastSelectedRef.current = null;
                                 return;
                             }
 
-                            // 날짜 포맷 변환
+                            lastSelectedRef.current = null;
+
                             let sDate = info.startStr.split('T')[0];
                             let eDate = (info.endStr && info.endStr.length === 10)
                                 ? new Date(new Date(info.endStr).getTime() - 86400000).toISOString().split('T')[0]
@@ -439,7 +441,6 @@
 
                             setSelectedSlot({ startDate: sDate, endDate: eDate });
 
-                            // 동작 수행 (모바일/PC 분기)
                             if (window.innerWidth < 640) {
                                 const allFcEvents = calendar.getEvents();
                                 const clickedTime = new Date(sDate + "T00:00:00").getTime();
@@ -458,7 +459,7 @@
                                 setShowNotice(true);
                             }
 
-                            calendar.unselect(); // 선택 해제
+                            calendarInstanceRef.current.unselect();
                         },
                         eventClick: function (info) {
                             const props = info.event.extendedProps;
