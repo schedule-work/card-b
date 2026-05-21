@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -17,60 +18,140 @@
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/ko.global.min.js"></script>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/date-holidays/dist/umd.min.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-    
-    /* 기본 (라이트모드) 캘린더 스타일 */
-    .fc { --fc-border-color: #e2e8f0; --fc-today-bg-color: #f1f5f9; background: white; padding: 10px; border-radius: 12px; }
-    .fc .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 600; color: #1e293b; }
-    .fc .fc-button-primary { background-color: #1e40af !important; border-color: #1e40af !important; padding: 0.5rem 1rem; }
-    .fc-event { cursor: pointer; padding: 2px 5px; font-size: 0.75rem; border-radius: 4px; }
-    .fc-day-sun a { color: #ef4444 !important; text-decoration: none; } 
-    .fc-day-sat a { color: #3b82f6 !important; text-decoration: none; } 
-    .holiday-text { color: #ef4444; font-size: 0.7rem; font-weight: 500; margin-top: 2px; } 
-    .holiday-day a { color: #ef4444 !important; } 
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* 기본 (라이트모드) 캘린더 스타일 */
+        .fc {
+            --fc-border-color: #e2e8f0;
+            --fc-today-bg-color: #f1f5f9;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .fc .fc-toolbar-title {
+            font-size: 1.25rem !important;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .fc .fc-button-primary {
+            background-color: #1e40af !important;
+            border-color: #1e40af !important;
+            padding: 0.5rem 1rem;
+        }
+
+        .fc-event {
+            cursor: pointer;
+            padding: 2px 5px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+        }
+
+        .fc-day-sun a {
+            color: #ef4444 !important;
+            text-decoration: none;
+        }
+
+        .fc-day-sat a {
+            color: #3b82f6 !important;
+            text-decoration: none;
+        }
+
+        .holiday-text {
+            color: #ef4444;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .holiday-day a {
+            color: #ef4444 !important;
+        }
 
         .fc-highlight {
-        background-color: rgba(59, 130, 246, 0.15) !important;
-        box-shadow: inset 0 0 0 2px #3b82f6 !important;
-    }
-
-    /* 모바일 최적화 */
-    @media (max-width: 640px) {
-        .fc .fc-toolbar-title { font-size: 0.9rem !important; }
-        .fc .fc-button { padding: 0.2rem 0.4rem !important; font-size: 0.7rem !important; }
-        .fc-header-toolbar { flex-wrap: wrap; gap: 5px; }
-    }
-
-    /* 다크모드 캘린더 전용 스타일 */
-    @media (prefers-color-scheme: dark) {
-        body { background-color: #0f172a; }
-        .fc { 
-            background: #1e293b; 
-            --fc-border-color: #334155; 
-            --fc-today-bg-color: #0f172a; 
-            --fc-page-bg-color: #1e293b;
-            --fc-neutral-text-color: #cbd5e1;
-            --fc-list-event-hover-bg-color: #334155;
-            color: #f8fafc; 
+            background-color: rgba(59, 130, 246, 0.15) !important;
+            box-shadow: inset 0 0 0 2px #3b82f6 !important;
         }
-        .fc .fc-toolbar-title { color: #f1f5f9 !important; }
-        .fc-theme-standard td, .fc-theme-standard th { border-color: #334155; }
-        .fc-col-header-cell-cushion, .fc-daygrid-day-number { color: #e2e8f0 !important; }
-        .fc-scrollgrid { border-color: #334155 !important; }
-        .fc-day-sun a, .holiday-day a { color: #f87171 !important; } 
-        .fc-day-sat a { color: #60a5fa !important; } 
-        .holiday-text { color: #f87171; }
-    }
+
+        /* 모바일 최적화 */
+        @media (max-width: 640px) {
+            .fc .fc-toolbar-title {
+                font-size: 0.9rem !important;
+            }
+
+            .fc .fc-button {
+                padding: 0.2rem 0.4rem !important;
+                font-size: 0.7rem !important;
+            }
+
+            .fc-header-toolbar {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+        }
+
+        /* 다크모드 캘린더 전용 스타일 */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #0f172a;
+            }
+
+            .fc {
+                background: #1e293b;
+                --fc-border-color: #334155;
+                --fc-today-bg-color: #0f172a;
+                --fc-page-bg-color: #1e293b;
+                --fc-neutral-text-color: #cbd5e1;
+                --fc-list-event-hover-bg-color: #334155;
+                color: #f8fafc;
+            }
+
+            .fc .fc-toolbar-title {
+                color: #f1f5f9 !important;
+            }
+
+            .fc-theme-standard td,
+            .fc-theme-standard th {
+                border-color: #334155;
+            }
+
+            .fc-col-header-cell-cushion,
+            .fc-daygrid-day-number {
+                color: #e2e8f0 !important;
+            }
+
+            .fc-scrollgrid {
+                border-color: #334155 !important;
+            }
+
+            .fc-day-sun a,
+            .holiday-day a {
+                color: #f87171 !important;
+            }
+
+            .fc-day-sat a {
+                color: #60a5fa !important;
+            }
+
+            .holiday-text {
+                color: #f87171;
+            }
+        }
     </style>
 
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
 </head>
+
 <body>
     <div id="root"></div>
 
@@ -111,35 +192,35 @@
         };
 
         const DEPARTMENTS = [
-            "응급전용병동", "51병동", "52병동", "53병동", "60병동", "61병동", "62병동", "63병동", "65병동", "70병동", 
-            "71병동", "72병동", "73병동", "80병동", "81병동", "82병동", "83병동", "85병동", "90병동", "91병동", 
-            "92병동", "93병동", "95병동", "100병동", "101병동", "분만실", "내시경실", "심혈관센터", "암병원", "응급실", 
-            "인공신장실", "1신경계중환자실", "2신경계중환자실", "내과중환자실", "마취통증의학과", "수술실", "신생아중환자실", 
+            "응급전용병동", "51병동", "52병동", "53병동", "60병동", "61병동", "62병동", "63병동", "65병동", "70병동",
+            "71병동", "72병동", "73병동", "80병동", "81병동", "82병동", "83병동", "85병동", "90병동", "91병동",
+            "92병동", "93병동", "95병동", "100병동", "101병동", "분만실", "내시경실", "심혈관센터", "암병원", "응급실",
+            "인공신장실", "1신경계중환자실", "2신경계중환자실", "내과중환자실", "마취통증의학과", "수술실", "신생아중환자실",
             "심혈관계중환자실", "외과중환자실", "응급중환자실", "중앙공급실", "보호요원실", "간호교육기획팀"
         ];
 
         const TIME_OPTIONS = [
-            "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
-            "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", 
+            "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+            "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00",
             "15:30", "16:00", "16:30", "17:00", "17:30"
         ];
 
         function App() {
             const [user, setUser] = React.useState(() => {
-    // 저장된 로그인 정보가 있으면 불러오고, 없으면 null을 반환합니다.
-    const saved = sessionStorage.getItem('cardPortalUser');
-    return saved ? JSON.parse(saved) : null;
-});
+                // 저장된 로그인 정보가 있으면 불러오고, 없으면 null을 반환합니다.
+                const saved = sessionStorage.getItem('cardPortalUser');
+                return saved ? JSON.parse(saved) : null;
+            });
             const [loginInput, setLoginInput] = React.useState({ name: '', empNo: '' });
             const [events, setEvents] = React.useState([]);
             const [loading, setLoading] = React.useState(false);
-            
+
             const [showListModal, setShowListModal] = React.useState(false);
             const [selectedDateReservations, setSelectedDateReservations] = React.useState([]);
-            
+
             const calendarInstanceRef = React.useRef(null);
             const eventsRef = React.useRef(events);
-            
+
             const [showNotice, setShowNotice] = React.useState(false);
             const [showForm, setShowForm] = React.useState(false);
             const [selectedEvent, setSelectedEvent] = React.useState(null);
@@ -167,35 +248,28 @@
                 eventsRef.current = events;
             }, [events]);
 
-            const fetchBookings = async () => {
-                setLoading(true);
+            const fetchBookings = async (isSilent = false) => {
+                const silent = isSilent === true;
+                if (!silent) setLoading(true);
                 try {
                     const response = await fetch(GOOGLE_SCRIPT_URL);
                     const data = await response.json();
-                    const formattedEvents = data.map(b => ({
-                        id: b.id,
-                        title: `[${b.dept}] ${b.name}`,
-                        start: b.startTime,
-                        end: b.endTime,
+                    setEvents(data.map(b => ({
+                        id: b.id, title: `[${b.dept}] ${b.name}`, start: b.startTime, end: b.endTime,
                         extendedProps: { ...b },
                         backgroundColor: b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : '#64748b',
                         borderColor: 'transparent'
-                    }));
-                    setEvents(formattedEvents);
-                } catch (error) {
-                    console.error("데이터 로드 실패:", error);
-                } finally {
-                    setLoading(false);
-                }
+                    })));
+                } catch (e) { console.error(e); } finally { if (!silent) setLoading(false); }
             };
 
             const handleLogin = (e) => {
                 e.preventDefault();
 
                 if (loginInput.empNo.length !== 5) {
-        alert("사번은 반드시 5자리여야 합니다.");
-        return; // 조건에 맞지 않으면 아래의 로그인 로직을 실행하지 않고 함수를 종료합니다.
-    }
+                    alert("사번은 반드시 5자리여야 합니다.");
+                    return; // 조건에 맞지 않으면 아래의 로그인 로직을 실행하지 않고 함수를 종료합니다.
+                }
                 const trimmedName = loginInput.name.trim();
                 const trimmedEmpNo = loginInput.empNo.trim();
                 if (!trimmedName || !trimmedEmpNo) {
@@ -203,12 +277,12 @@
                     return;
                 }
                 const isSuperAdmin = trimmedName.toUpperCase().includes("DNS") && trimmedEmpNo === "1606";
-    const loggedInUser = { name: trimmedName, empNo: trimmedEmpNo, isAdmin: isSuperAdmin };
-    
-    setUser(loggedInUser);
-    // 로그인 성공 시 세션 스토리지에 정보를 저장합니다.
-    sessionStorage.setItem('cardPortalUser', JSON.stringify(loggedInUser));
-};
+                const loggedInUser = { name: trimmedName, empNo: trimmedEmpNo, isAdmin: isSuperAdmin };
+
+                setUser(loggedInUser);
+                // 로그인 성공 시 세션 스토리지에 정보를 저장합니다.
+                sessionStorage.setItem('cardPortalUser', JSON.stringify(loggedInUser));
+            };
 
             React.useEffect(() => { if (user) fetchBookings(); }, [user]);
 
@@ -223,7 +297,7 @@
                     let unselectTimer = null;
 
                     const calendar = new FullCalendar.Calendar(calendarEl, {
-                        height: '100%', 
+                        height: '100%',
                         locale: 'ko',
                         selectable: true,
                         selectLongPressDelay: 0,
@@ -232,43 +306,43 @@
                         slotMinTime: '08:30:00',
                         slotMaxTime: '17:30:00',
                         // 기존 validRange 아래에 이어서 붙여넣으세요
-    validRange: { start: '2026-05-01' },
+                        validRange: { start: '2026-05-01' },
 
-    selectAllow: function(selectInfo) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // 오늘 정각
-        
-        const maxSelectDate = new Date();
-        maxSelectDate.setHours(0, 0, 0, 0);
-        maxSelectDate.setMonth(maxSelectDate.getMonth() + 2); // 2개월 뒤
-        
-        const selectStart = new Date(selectInfo.startStr + "T00:00:00");
-        
-        // [조건 1] 과거 날짜인 경우
-if (selectStart < today) {
-    alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
-    return false;
-}
+                        selectAllow: function (selectInfo) {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0); // 오늘 정각
 
-// [조건 2] 2개월을 초과한 경우
-if (selectStart > maxSelectDate) {
-    alert("⚠️ 예약은 오늘부터 2개월 이내의 날짜만 신청 가능합니다.");
-    return false;
-}
-        return true; // 허용
-    },
+                            const maxSelectDate = new Date();
+                            maxSelectDate.setHours(0, 0, 0, 0);
+                            maxSelectDate.setMonth(maxSelectDate.getMonth() + 2); // 2개월 뒤
+
+                            const selectStart = new Date(selectInfo.startStr + "T00:00:00");
+
+                            // [조건 1] 과거 날짜인 경우
+                            if (selectStart < today) {
+                                alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
+                                return false;
+                            }
+
+                            // [조건 2] 2개월을 초과한 경우
+                            if (selectStart > maxSelectDate) {
+                                alert("⚠️ 예약은 오늘부터 2개월 이내의 날짜만 신청 가능합니다.");
+                                return false;
+                            }
+                            return true; // 허용
+                        },
                         headerToolbar: {
                             left: 'prev,next today',
                             center: 'title',
                             right: 'dayGridMonth,timeGridDay'
                         },
 
-                        dayCellClassNames: function(arg) {
+                        dayCellClassNames: function (arg) {
                             if (getHolidayName(arg.date)) return ['holiday-day'];
                             return [];
                         },
 
-                        dayCellContent: function(arg) {
+                        dayCellContent: function (arg) {
                             const dayNumber = arg.dayNumberText.replace('일', '');
                             const holidayName = getHolidayName(arg.date);
                             if (holidayName && arg.view.type === 'dayGridMonth') {
@@ -277,7 +351,7 @@ if (selectStart > maxSelectDate) {
                             return { html: `<span>${dayNumber}</span>` };
                         },
 
-                        eventContent: function(arg) {
+                        eventContent: function (arg) {
                             const start = new Date(arg.event.start);
                             const end = new Date(arg.event.end);
                             const getFormat = (d) => {
@@ -286,96 +360,96 @@ if (selectStart > maxSelectDate) {
                                 const ampm = h < 12 ? 'A' : 'P';
                                 if (h > 12) h -= 12;
                                 if (h === 0) h = 12;
-                                const mStr = m === 0 ? '' : m; 
+                                const mStr = m === 0 ? '' : m;
                                 return `${h}${ampm}${mStr}`;
                             };
                             const timeStr = `${getFormat(start)}~${getFormat(end)}`;
-                            const dept = arg.event.title.split(']')[0] + ']'; 
+                            const dept = arg.event.title.split(']')[0] + ']';
                             return { html: `<div class="fc-event-main-frame" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${timeStr}</b> ${dept}</div>` };
                         },
 
-    unselect: function() {
-        // 사용자가 다른 곳을 클릭해 선택이 해제되면 초기화
-        // (단, 같은 날짜를 다시 눌렀을 때 초기화되는 것을 막기 위해 0.1초 지연)
-        unselectTimer = setTimeout(() => {
-            lastSelectedStr = null;
-        }, 100);
-    },
+                        unselect: function () {
+                            // 사용자가 다른 곳을 클릭해 선택이 해제되면 초기화
+                            // (단, 같은 날짜를 다시 눌렀을 때 초기화되는 것을 막기 위해 0.1초 지연)
+                            unselectTimer = setTimeout(() => {
+                                lastSelectedStr = null;
+                            }, 100);
+                        },
 
-    select: function(info) {
-        clearTimeout(unselectTimer); // 같은 날짜를 클릭했을 때 unselect 타이머가 작동하는 것을 방지
-        
-        const currentSelectedStr = info.startStr + "_" + info.endStr;
-        
-        // 1. 첫 번째 클릭인 경우 (새로운 날짜를 누름)
-        if (lastSelectedStr !== currentSelectedStr) {
-            lastSelectedStr = currentSelectedStr;
-            return; // 아무 팝업도 띄우지 않고 함수를 끝냄 (파란 테두리 효과만 남음)
-        }
+                        select: function (info) {
+                            clearTimeout(unselectTimer); // 같은 날짜를 클릭했을 때 unselect 타이머가 작동하는 것을 방지
 
-        // 2. 두 번째 클릭인 경우 (이미 파란 테두리가 있는 날짜를 다시 누름)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); 
-        
-        const maxSelectDate = new Date();
-        maxSelectDate.setHours(0, 0, 0, 0);
-        maxSelectDate.setMonth(maxSelectDate.getMonth() + 2); 
-        
-        const selectStart = new Date(info.startStr + "T00:00:00");
-        
-        if (selectStart < today) {
-            alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
-            info.view.calendar.unselect();
-            lastSelectedStr = null;
-            return;
-        }
+                            const currentSelectedStr = info.startStr + "_" + info.endStr;
 
-        if (selectStart > maxSelectDate) {
-            alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
-            info.view.calendar.unselect();
-            lastSelectedStr = null;
-            return;
-        }
+                            // 1. 첫 번째 클릭인 경우 (새로운 날짜를 누름)
+                            if (lastSelectedStr !== currentSelectedStr) {
+                                lastSelectedStr = currentSelectedStr;
+                                return; // 아무 팝업도 띄우지 않고 함수를 끝냄 (파란 테두리 효과만 남음)
+                            }
 
-        let sDate = info.startStr.split('T')[0];
-        let eDate = info.endStr.split('T')[0];
-        if (info.startStr.length === 10) {
-            const eObj = new Date(info.endStr);
-            eObj.setDate(eObj.getDate() - 1);
-            eDate = eObj.toISOString().split('T')[0];
-        }
-        
-        setSelectedSlot({ startDate: sDate, endDate: eDate });
+                            // 2. 두 번째 클릭인 경우 (이미 파란 테두리가 있는 날짜를 다시 누름)
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
 
-        if (window.innerWidth < 640) {
-            const allFcEvents = info.view.calendar.getEvents();
-            const clickedTime = new Date(sDate + "T00:00:00").getTime();
-            const nextDayTime = clickedTime + (24 * 60 * 60 * 1000);
+                            const maxSelectDate = new Date();
+                            maxSelectDate.setHours(0, 0, 0, 0);
+                            maxSelectDate.setMonth(maxSelectDate.getMonth() + 2);
 
-            const dayEvents = allFcEvents.filter(ev => {
-                if (!ev.start || !ev.end) return false;
-                const evStart = ev.start.getTime();
-                const evEnd = ev.end.getTime();
-                return (evStart < nextDayTime) && (evEnd > clickedTime);
-            }).map(ev => ({
-                id: ev.id,
-                title: ev.title,
-                startObj: ev.start, 
-                endObj: ev.end,
-                extendedProps: ev.extendedProps
-            }));
-            
-            setSelectedDateReservations(dayEvents);
-            setShowListModal(true); 
-        } else {
-            setSelectedEvent(null);
-            setShowNotice(true);
-        }
+                            const selectStart = new Date(info.startStr + "T00:00:00");
 
-        lastSelectedStr = null;
-    },
+                            if (selectStart < today) {
+                                alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
+                                info.view.calendar.unselect();
+                                lastSelectedStr = null;
+                                return;
+                            }
 
-                        eventClick: function(info) {
+                            if (selectStart > maxSelectDate) {
+                                alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
+                                info.view.calendar.unselect();
+                                lastSelectedStr = null;
+                                return;
+                            }
+
+                            let sDate = info.startStr.split('T')[0];
+                            let eDate = info.endStr.split('T')[0];
+                            if (info.startStr.length === 10) {
+                                const eObj = new Date(info.endStr);
+                                eObj.setDate(eObj.getDate() - 1);
+                                eDate = eObj.toISOString().split('T')[0];
+                            }
+
+                            setSelectedSlot({ startDate: sDate, endDate: eDate });
+
+                            if (window.innerWidth < 640) {
+                                const allFcEvents = info.view.calendar.getEvents();
+                                const clickedTime = new Date(sDate + "T00:00:00").getTime();
+                                const nextDayTime = clickedTime + (24 * 60 * 60 * 1000);
+
+                                const dayEvents = allFcEvents.filter(ev => {
+                                    if (!ev.start || !ev.end) return false;
+                                    const evStart = ev.start.getTime();
+                                    const evEnd = ev.end.getTime();
+                                    return (evStart < nextDayTime) && (evEnd > clickedTime);
+                                }).map(ev => ({
+                                    id: ev.id,
+                                    title: ev.title,
+                                    startObj: ev.start,
+                                    endObj: ev.end,
+                                    extendedProps: ev.extendedProps
+                                }));
+
+                                setSelectedDateReservations(dayEvents);
+                                setShowListModal(true);
+                            } else {
+                                setSelectedEvent(null);
+                                setShowNotice(true);
+                            }
+
+                            lastSelectedStr = null;
+                        },
+
+                        eventClick: function (info) {
                             const props = info.event.extendedProps;
                             setSelectedEvent(props);
                             if (DEPARTMENTS.includes(props.dept)) {
@@ -395,29 +469,29 @@ if (selectStart > maxSelectDate) {
                                 setPhone1Select('기타'); setPhone1Custom(pParts[0] || '');
                             }
                             setPhone2(pParts[1] || ''); setPhone3(pParts[2] || '');
-                            
+
                             const start = new Date(props.startTime);
                             const end = new Date(props.endTime);
                             const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
                             const toTimeStr = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 
                             // 본인이거나 관리자라면 원본 사번을 보여주고, 타인이라면 앞자리 일부만 남기고 마스킹(예: 24****) 합니다.
-const isOwnerOrAdmin = user.isAdmin || String(props.empNo || "").trim() === String(user.empNo || "").trim();
-const displayedEmpNo = isOwnerOrAdmin ? props.empNo : String(props.empNo || "").slice(0, 2) + "****";
+                            const isOwnerOrAdmin = user.isAdmin || String(props.empNo || "").trim() === String(user.empNo || "").trim();
+                            const displayedEmpNo = isOwnerOrAdmin ? props.empNo : String(props.empNo || "").slice(0, 2) + "****";
 
-setFormData({ 
-    id: props.id, name: props.name, 
-    empNo: displayedEmpNo,
-    startDate: toDateStr(start), startTimePart: toTimeStr(start), 
-    endDate: toDateStr(end), endTimePart: toTimeStr(end), 
-    purpose: props.purpose, details: props.details 
-});
+                            setFormData({
+                                id: props.id, name: props.name,
+                                empNo: displayedEmpNo,
+                                startDate: toDateStr(start), startTimePart: toTimeStr(start),
+                                endDate: toDateStr(end), endTimePart: toTimeStr(end),
+                                purpose: props.purpose, details: props.details
+                            });
 
-// ⭐ 이 코드가 추가되어야 터치 시 즉시 모달창이 열립니다!
-setSelectedSlot({ startDate: toDateStr(start), endDate: toDateStr(end) });
+                            // ⭐ 이 코드가 추가되어야 터치 시 즉시 모달창이 열립니다!
+                            setSelectedSlot({ startDate: toDateStr(start), endDate: toDateStr(end) });
 
-setShowListModal(false); 
-setShowForm(true);
+                            setShowListModal(false);
+                            setShowForm(true);
                         },
                     });
 
@@ -443,17 +517,17 @@ setShowForm(true);
 
             const confirmNotice = () => {
                 setShowNotice(false);
-                setDeptSelect('선택'); setDeptCustom(''); 
-                setBudgetSelect('선택'); setBudgetCustom(''); 
+                setDeptSelect('선택'); setDeptCustom('');
+                setBudgetSelect('선택'); setBudgetCustom('');
                 setPhone1Select('010'); setPhone1Custom('');
                 setPhone2(''); setPhone3('');
 
                 setFormData({
                     id: '', name: user.name, empNo: user.empNo,
-                    startDate: selectedSlot.startDate, 
-                    startTimePart: '', 
-                    endDate: '', 
-                    endTimePart: '', 
+                    startDate: selectedSlot.startDate,
+                    startTimePart: '',
+                    endDate: '',
+                    endTimePart: '',
                     purpose: '', details: ''
                 });
                 setShowForm(true);
@@ -461,12 +535,12 @@ setShowForm(true);
 
             const isAvailableDate = (dateStr) => {
                 if (!dateStr) return false;
-                const date = new Date(dateStr + "T00:00:00"); 
-                const day = date.getDay(); 
-                
+                const date = new Date(dateStr + "T00:00:00");
+                const day = date.getDay();
+
                 if (day === 0 || day === 6) return false;
                 if (typeof getHolidayName === 'function' && getHolidayName(date)) return false;
-                
+
                 return true;
             };
 
@@ -476,7 +550,7 @@ setShowForm(true);
                 const finalDept = deptSelect === '직접 입력' ? deptCustom.trim() : deptSelect;
                 const finalBudget = budgetSelect === '기타' ? budgetCustom.trim() : budgetSelect;
                 const finalPhone1 = phone1Select === '기타' ? phone1Custom.trim() : phone1Select;
-                
+
                 if (deptSelect === '선택') return alert("대여 부서를 선택해주세요.");
                 if (budgetSelect === '선택') return alert("사용 예산 구분을 선택해주세요.");
                 if (!formData.startDate || !formData.startTimePart || !formData.endDate || !formData.endTimePart) {
@@ -487,7 +561,7 @@ setShowForm(true);
                 if (!isAvailableDate(formData.endDate)) return alert("반납 예정일은 주말 및 공휴일을 제외한 평일만 선택 가능합니다.");
 
                 const combinedContact = `${finalPhone1}-${phone2.trim()}-${phone3.trim()}`;
-                
+
                 const newStart = new Date(`${formData.startDate}T${formData.startTimePart}:00`);
                 const newEnd = new Date(`${formData.endDate}T${formData.endTimePart}:00`);
 
@@ -497,14 +571,14 @@ setShowForm(true);
                 }
 
                 const diffTime = Math.abs(newEnd - newStart);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 if (diffDays > 3) {
-                    alert("원활한 카드 사용을 위해 장기 예약은 최대 3일까지만 가능합니다.\n필요시 기간을 나누어 예약해 주시기 바랍니다.");
+                    alert("원활한 카드 사용을 위해 장기 예약은 최대 3일까지만 가능합니다.");
                     return;
                 }
 
                 const isOverlap = events.some(ev => {
-                    if (formData.id && String(ev.id) === String(formData.id)) return false; 
+                    if (formData.id && String(ev.id) === String(formData.id)) return false;
                     const evStart = new Date(ev.start).getTime();
                     const evEnd = new Date(ev.end).getTime();
                     const reqStart = newStart.getTime();
@@ -513,21 +587,20 @@ setShowForm(true);
                 });
 
                 if (isOverlap) {
-                    alert("선택하신 시간에 이미 예약된 내역이 있습니다. 다른 시간을 선택해주세요.");
+                    alert("선택하신 시간에 이미 예약된 내역이 있습니다.");
                     return;
                 }
 
                 setLoading(true);
                 const actionType = formData.id ? "UPDATE" : "CREATE";
-                
                 const isOwnerOrAdmin = user.isAdmin || !selectedEvent || String(selectedEvent.empNo || "").trim() === String(user.empNo || "").trim();
-const finalEmpNo = isOwnerOrAdmin ? formData.empNo.trim() : selectedEvent.empNo;
+                const finalEmpNo = isOwnerOrAdmin ? formData.empNo.trim() : selectedEvent.empNo;
 
-const payload = {
-    id: formData.id,
-    dept: finalDept,
-    name: formData.name,
-    empNo: finalEmpNo, // ✅ 안전하게 필터링된 사번 전송
+                const payload = {
+                    id: formData.id,
+                    dept: finalDept,
+                    name: formData.name,
+                    empNo: finalEmpNo,
                     startTime: `${formData.startDate}T${formData.startTimePart}:00`,
                     endTime: `${formData.endDate}T${formData.endTimePart}:00`,
                     budget: finalBudget,
@@ -536,18 +609,22 @@ const payload = {
                     contact: combinedContact
                 };
 
+                // try 블록 내부
                 try {
-                    await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: actionType, ...payload })
-                    });
-                    alert(actionType === "CREATE" ? "예약이 완료되었습니다." : "예약이 수정되었습니다.");
+                    await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: actionType, ...payload }) });
+                    setLoading(false); // 성공 시 로딩 종료
                     setShowForm(false);
-                    fetchBookings();
-                } catch (error) {
-                    alert("서버 통신 중 오류가 발생했습니다.");
-                } finally {
-                    setLoading(false);
+                    calendarInstanceRef.current?.unselect();
+
+                    // 즉시 반영(낙관적 업데이트)
+                    const tempId = formData.id || "temp-" + Date.now();
+                    const newEvent = { ...payload, id: tempId, title: `[${payload.dept}] ${payload.name}`, start: payload.startTime, end: payload.endTime };
+                    setEvents(prev => formData.id ? prev.map(ev => String(ev.id) === String(formData.id) ? newEvent : ev) : [...prev, newEvent]);
+                    fetchBookings(true);
+                    setTimeout(() => alert("저장되었습니다."), 50);
+                } catch (e) {
+                    alert("오류 발생");
+                    setLoading(false); // 실패 시 로딩 종료
                 }
             };
 
@@ -555,23 +632,23 @@ const payload = {
                 if (!confirm("정말 이 예약을 취소하시겠습니까?")) return;
                 setLoading(true);
                 try {
-                    await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: "DELETE", id: formData.id })
-                    });
-                    alert("예약이 취소되었습니다.");
+                    await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "DELETE", id: formData.id }) });
+                    setLoading(false); // 성공 시 로딩 종료
                     setShowForm(false);
-                    fetchBookings();
-                } catch (error) {
-                    alert("취소 처리 중 오류가 발생했습니다.");
-                } finally {
-                    setLoading(false);
+                    calendarInstanceRef.current?.unselect();
+
+                    setEvents(prev => prev.filter(ev => String(ev.id) !== String(formData.id)));
+                    fetchBookings(true);
+                    setTimeout(() => alert("취소되었습니다."), 50);
+                } catch (e) {
+                    alert("오류 발생");
+                    setLoading(false); // 실패 시 로딩 종료
                 }
             };
 
             const hasPermission = React.useMemo(() => {
-                if (!user) return false; 
-                if (!selectedEvent) return true; 
+                if (!user) return false;
+                if (!selectedEvent) return true;
                 if (user.isAdmin) return true;
                 const eventEmpNo = String(selectedEvent.empNo || "").trim();
                 const userEmpNo = String(user.empNo || "").trim();
@@ -589,26 +666,26 @@ const payload = {
                             <form onSubmit={handleLogin} className="space-y-5">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">이름</label>
-                                    <input type="text" required value={loginInput.name} onChange={e => setLoginInput({...loginInput, name: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 text-sm transition" placeholder="홍길동" />
+                                    <input type="text" required value={loginInput.name} onChange={e => setLoginInput({ ...loginInput, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 text-sm transition" placeholder="홍길동" />
                                 </div>
                                 <div>
-    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">사번</label>
-    <input 
-        type="text" 
-        required 
-        maxLength={5} // 최대 5자리까지만 입력 가능
-        minLength={5} // 최소 5자리를 채워야 폼 제출 가능
-        value={loginInput.empNo} 
-        onChange={e => {
-            // 1. toUpperCase()로 소문자를 대문자로 자동 변환
-            // 2. replace()로 영문 대문자와 숫자 이외의 문자(한글, 특수기호 등)는 자동 삭제
-            const formattedEmpNo = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-            setLoginInput({...loginInput, empNo: formattedEmpNo});
-        }} 
-        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 text-sm transition" 
-        placeholder="사번 5자리 입력" 
-    />
-</div>
+                                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">사번</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        maxLength={5} // 최대 5자리까지만 입력 가능
+                                        minLength={5} // 최소 5자리를 채워야 폼 제출 가능
+                                        value={loginInput.empNo}
+                                        onChange={e => {
+                                            // 1. toUpperCase()로 소문자를 대문자로 자동 변환
+                                            // 2. replace()로 영문 대문자와 숫자 이외의 문자(한글, 특수기호 등)는 자동 삭제
+                                            const formattedEmpNo = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                            setLoginInput({ ...loginInput, empNo: formattedEmpNo });
+                                        }}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 text-sm transition"
+                                        placeholder="사번 5자리 입력"
+                                    />
+                                </div>
                                 <button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-3 rounded-xl shadow-lg shadow-blue-700/10 transition text-sm">시스템 접속</button>
                             </form>
                         </div>
@@ -619,7 +696,7 @@ const payload = {
             return (
                 // 화면 꽉 차게 flex 레이아웃 적용
                 <div className="h-dvh flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200 overflow-hidden">
-                    
+
                     {/* 안내문구가 통합된 새로운 헤더 */}
                     <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shrink-0 shadow-sm transition-colors duration-200 z-10">
                         <div className="flex flex-col">
@@ -636,20 +713,20 @@ const payload = {
                             <span className="text-sm text-slate-600 dark:text-slate-300">
                                 <strong className="text-slate-900 dark:text-white">{user.name}</strong> 님
                             </span>
-                            
+
                             <div className="flex items-center space-x-2">
                                 {/* 새로고침: 파란색 눈에 띄는 버튼으로 변경 */}
                                 <button onClick={fetchBookings} className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-md">
                                     <span>🔄 새로고침</span>
                                 </button>
-                                
+
                                 {/* 로그아웃: 텍스트 형태로 유지하여 실수 클릭 방지 */}
-                                <button onClick={() => { 
-                                    setUser(null); 
+                                <button onClick={() => {
+                                    setUser(null);
                                     sessionStorage.removeItem('cardPortalUser');
-                                    setSelectedEvent(null); 
-                                    setShowForm(false); 
-                                    setShowListModal(false); 
+                                    setSelectedEvent(null);
+                                    setShowForm(false);
+                                    setShowListModal(false);
                                     setShowNotice(false);
                                 }} className="px-2 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition">
                                     로그아웃
@@ -678,62 +755,62 @@ const payload = {
                     </main>
 
                     {showListModal && (
-                    <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700">
-                            <h3 className="font-bold mb-4 text-slate-900 dark:text-white">{selectedSlot?.startDate} 예약 목록</h3>
-                            {selectedDateReservations.length > 0 ? (
-                                selectedDateReservations.map(ev => {
-                                    const formatTime = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-                                    const formatDate = (d) => String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
-                                    
-                                    const isSameDay = ev.startObj.toDateString() === ev.endObj.toDateString();
-                                    const timeDisplay = isSameDay 
-                                        ? `${formatTime(ev.startObj)} ~ ${formatTime(ev.endObj)}`
-                                        : `${formatDate(ev.startObj)} ${formatTime(ev.startObj)} ~ ${formatDate(ev.endObj)} ${formatTime(ev.endObj)}`;
+                        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700">
+                                <h3 className="font-bold mb-4 text-slate-900 dark:text-white">{selectedSlot?.startDate} 예약 목록</h3>
+                                {selectedDateReservations.length > 0 ? (
+                                    selectedDateReservations.map(ev => {
+                                        const formatTime = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+                                        const formatDate = (d) => String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
 
-                                    return (
-                                        <div key={ev.id} onClick={() => { setSelectedEvent(ev.extendedProps); setShowListModal(false); setShowForm(true); }} className="p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm flex flex-col gap-1 transition-colors">
-                                            <span className="font-semibold text-blue-700 dark:text-blue-400">{ev.title}</span>
-                                            <span className="text-slate-500 dark:text-slate-400 text-xs">{timeDisplay}</span>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-4">예약된 내역이 없습니다.</p>
-                            )}
-                            
-<div className="flex gap-2 mt-4">
-    <button 
-        onClick={() => {
-        setShowListModal(false);
-        calendarInstanceRef.current?.unselect(); // ← 이 줄 추가
-    }}
-        className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 py-3 rounded-xl font-medium transition text-sm"
-    >
-        Back
-    </button>
-    <button 
-        onClick={() => { 
-            setSelectedEvent(null); 
-            setShowListModal(false); 
-            setShowNotice(true); 
-        }} 
-        className="flex-[2] bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl shadow-md font-medium transition text-sm"
-    >
-        + 신규 예약
-    </button>
-</div>
-</div>
-                    </div>
+                                        const isSameDay = ev.startObj.toDateString() === ev.endObj.toDateString();
+                                        const timeDisplay = isSameDay
+                                            ? `${formatTime(ev.startObj)} ~ ${formatTime(ev.endObj)}`
+                                            : `${formatDate(ev.startObj)} ${formatTime(ev.startObj)} ~ ${formatDate(ev.endObj)} ${formatTime(ev.endObj)}`;
+
+                                        return (
+                                            <div key={ev.id} onClick={() => { setSelectedEvent(ev.extendedProps); setShowListModal(false); setShowForm(true); }} className="p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm flex flex-col gap-1 transition-colors">
+                                                <span className="font-semibold text-blue-700 dark:text-blue-400">{ev.title}</span>
+                                                <span className="text-slate-500 dark:text-slate-400 text-xs">{timeDisplay}</span>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-4">예약된 내역이 없습니다.</p>
+                                )}
+
+                                <div className="flex gap-2 mt-4">
+                                    <button
+                                        onClick={() => {
+                                            setShowForm(false);
+                                            calendarInstanceRef.current?.unselect();
+                                        }}
+                                        className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 py-3 rounded-xl font-medium transition text-sm"
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedEvent(null);
+                                            setShowListModal(false);
+                                            setShowNotice(true);
+                                        }}
+                                        className="flex-[2] bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl shadow-md font-medium transition text-sm"
+                                    >
+                                        + 신규 예약
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     )}
-                    
+
                     {showNotice && (
                         <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                             <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl p-6 border border-slate-100 dark:border-slate-700">
                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">법인카드 대여 사전 유의사항</h3>
                                 <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6 space-y-3">
                                     <p>
-                                        • 법인카드 결제 영수증은 A4 용지에 부착하여 제출 부탁드립니다.<br/>
+                                        • 법인카드 결제 영수증은 A4 용지에 부착하여 제출 부탁드립니다.<br />
                                         <span className="text-blue-600 dark:text-blue-400">(카드번호 뒷자리 4자리 기입, 사용 부서 및 용도, 거래내역 표기 필수)</span>
                                     </p>
                                     <p>• 결제 영수증은 사용월 기준 익월 10일까지 제출 필수</p>
@@ -745,9 +822,10 @@ const payload = {
                                     </div>
                                 </div>
                                 <div className="flex space-x-3">
-                                    <button onClick={() => { setShowNotice(false);
-        calendarInstanceRef.current?.unselect(); // ← 이 줄 추가
-    }} className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 font-medium py-3 rounded-xl transition text-sm">취소</button>
+                                    <button onClick={() => {
+                                        setShowForm(false);
+                                        calendarInstanceRef.current?.unselect();
+                                    }} className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 font-medium py-3 rounded-xl transition text-sm">취소</button>
                                     <button onClick={confirmNotice} className="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-medium py-3 rounded-xl transition text-sm">유의사항 확인 완료</button>
                                 </div>
                             </div>
@@ -759,11 +837,12 @@ const payload = {
                             <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl p-5 sm:p-6 border border-slate-100 dark:border-slate-700 my-10 relative">
                                 <div className="flex justify-between items-center mb-5">
                                     <h3 className="text-lg font-bold text-slate-900 dark:text-white">{formData.id ? "예약 상세 정보" : "신규 법인카드 예약 신청"}</h3>
-                                    <button type="button" onClick={() => { setShowForm(false);
-    calendarInstanceRef.current?.unselect();
+                                    <button type="button" onClick={() => {
+                                        setShowForm(false);
+                                        calendarInstanceRef.current?.unselect();
                                     }} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-xl transition-colors">&times;</button>
                                 </div>
-                                
+
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여 부서</label>
@@ -796,73 +875,73 @@ const payload = {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여자 이름</label>
-                                            <input type="text" disabled={!hasPermission} required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" />
+                                            <input type="text" disabled={!hasPermission} required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여자 사번</label>
-                                            <input type="text" disabled={!hasPermission} required value={formData.empNo} onChange={e => setFormData({...formData, empNo: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" />
+                                            <input type="text" disabled={!hasPermission} required value={formData.empNo} onChange={e => setFormData({ ...formData, empNo: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full overflow-hidden">
-    {/* 대여 시작일 및 시간 */}
-<div>
-    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여 시작일 및 시간</label>
-    <div className="flex space-x-2">
-        <input 
-            type="date" 
-            disabled={!hasPermission} 
-            required 
-            value={formData.startDate}
-            onChange={e => setFormData({...formData, startDate: e.target.value})}
-            className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" 
-        />
-        <select 
-            disabled={!hasPermission} 
-            required 
-            value={formData.startTimePart} 
-            onChange={e => setFormData({...formData, startTimePart: e.target.value})} 
-            className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
-        >
-            <option value="" disabled>선택</option>
-            {TIME_OPTIONS.map(time => <option key={`start-${time}`} value={time}>{time}</option>)}
-        </select>
-    </div>
-</div>
+                                        {/* 대여 시작일 및 시간 */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여 시작일 및 시간</label>
+                                            <div className="flex space-x-2">
+                                                <input
+                                                    type="date"
+                                                    disabled={!hasPermission}
+                                                    required
+                                                    value={formData.startDate}
+                                                    onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                                                    className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+                                                />
+                                                <select
+                                                    disabled={!hasPermission}
+                                                    required
+                                                    value={formData.startTimePart}
+                                                    onChange={e => setFormData({ ...formData, startTimePart: e.target.value })}
+                                                    className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+                                                >
+                                                    <option value="" disabled>선택</option>
+                                                    {TIME_OPTIONS.map(time => <option key={`start-${time}`} value={time}>{time}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
 
-{/* 반납 예정일 및 시간 */}
-<div>
-    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">반납 예정일 및 시간</label>
-    <div className="flex space-x-2">
-        <input 
-            type="date" 
-            disabled={!hasPermission} 
-            required 
-            value={formData.endDate} 
-            onChange={e => setFormData({...formData, endDate: e.target.value})} 
-            className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" 
-        />
-        <select 
-            disabled={!hasPermission} 
-            required 
-            value={formData.endTimePart} 
-            onChange={e => setFormData({...formData, endTimePart: e.target.value})} 
-            className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 transition-colors"
-        >
-            <option value="" disabled>선택</option>
-            {TIME_OPTIONS.map(time => <option key={`end-${time}`} value={time}>{time}</option>)}
-        </select>
-    </div>
-</div>
-</div>
+                                        {/* 반납 예정일 및 시간 */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">반납 예정일 및 시간</label>
+                                            <div className="flex space-x-2">
+                                                <input
+                                                    type="date"
+                                                    disabled={!hasPermission}
+                                                    required
+                                                    value={formData.endDate}
+                                                    onChange={e => setFormData({ ...formData, endDate: e.target.value })}
+                                                    className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+                                                />
+                                                <select
+                                                    disabled={!hasPermission}
+                                                    required
+                                                    value={formData.endTimePart}
+                                                    onChange={e => setFormData({ ...formData, endTimePart: e.target.value })}
+                                                    className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 transition-colors"
+                                                >
+                                                    <option value="" disabled>선택</option>
+                                                    {TIME_OPTIONS.map(time => <option key={`end-${time}`} value={time}>{time}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">사용 용도 (사업명 또는 사업계획서명)</label>
-                                        <input type="text" disabled={!hasPermission} required value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="목적을 명확히 기입해주세요." />
+                                        <input type="text" disabled={!hasPermission} required value={formData.purpose} onChange={e => setFormData({ ...formData, purpose: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="목적을 명확히 기입해주세요." />
                                     </div>
 
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">세부 내용 (선택사항)</label>
-                                        <textarea disabled={!hasPermission} value={formData.details} onChange={e => setFormData({...formData, details: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm h-16 focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="필요시 기입"></textarea>
+                                        <textarea disabled={!hasPermission} value={formData.details} onChange={e => setFormData({ ...formData, details: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm h-16 focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="필요시 기입"></textarea>
                                     </div>
 
                                     <div>
@@ -891,13 +970,14 @@ const payload = {
                                             <button type="button" onClick={handleDelete} className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 font-medium px-4 py-2.5 rounded-xl text-sm transition">예약 취소</button>
                                         )}
                                         <div className="flex-1 flex justify-end space-x-2">
-                                            <button type="button" onClick={() => { setShowForm(false);
-    calendarInstanceRef.current?.unselect(); // ← 이 줄 추가
-} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">취소</button>
+                                            <button type="button" onClick={() => {
+                                                setShowForm(false);
+                                                calendarInstanceRef.current?.unselect();
+                                            }} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">취소</button>
                                             {hasPermission && (
-                                                <button 
-                                                    type="submit" 
-                                                    disabled={loading} 
+                                                <button
+                                                    type="submit"
+                                                    disabled={loading}
                                                     className={`px-6 py-2.5 rounded-xl text-sm font-medium transition ${loading ? 'bg-gray-400 dark:bg-slate-600 cursor-not-allowed text-white' : 'bg-blue-700 text-white hover:bg-blue-800 dark:hover:bg-blue-600'}`}
                                                 >
                                                     {loading ? '저장 중...' : '저장'}
@@ -913,9 +993,10 @@ const payload = {
             );
         }
 
-                // UMD(CDN) 방식에서는 ReactDOM 객체를 그대로 사용합니다.
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
-            </script>
+        // UMD(CDN) 방식에서는 ReactDOM 객체를 그대로 사용합니다.
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
+
 </html>
