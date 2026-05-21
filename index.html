@@ -156,7 +156,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAhuFd-dWAUOtckSN2c_kThRSTELSf7K0C_BEtqtcklGnmUDRhZHz98eJkAAScWP4vBg/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGnU-bQhIDhx4_vRy3iLIJUWvDWfzOegMK_YEvfYP6cnoSpBqHdDssDuYYXJwBxXFT7A/exec";
 
         let hd = null;
         try {
@@ -175,16 +175,17 @@
         };
 
         const getHolidayName = (dateObj) => {
-
-            if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) {
-                return "제헌절";
-            }
-            
-            const dateStr = [
+            const dateStr = [dateObj.getFullYear(), String(dateObj.getMonth() + 1).padStart(2, '0'), String(dateObj.getDate()).padStart(2, '0')].join('-');
                 dateObj.getFullYear(),
                 String(dateObj.getMonth() + 1).padStart(2, '0'),
                 String(dateObj.getDate()).padStart(2, '0')
             ].join('-');
+            
+            if (customHolidays[dateStr]) return customHolidays[dateStr];
+            
+            if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) {
+                return "제헌절";
+            }
 
             if (hd) {
                 const res = hd.isHoliday(dateObj);
@@ -193,7 +194,7 @@
                     if (publicH) return publicH.name;
                 }
             }
-            
+
             return FALLBACK_HOLIDAYS[dateStr] || null;
         };
 
@@ -219,6 +220,7 @@
             });
             const [loginInput, setLoginInput] = React.useState({ name: '', empNo: '' });
             const [events, setEvents] = React.useState([]);
+            const [customHolidays, setCustomHolidays] = React.useState({});
             const [loading, setLoading] = React.useState(false);
 
             const [showListModal, setShowListModal] = React.useState(false);
@@ -261,12 +263,17 @@
                 try {
                     const response = await fetch(GOOGLE_SCRIPT_URL);
                     const data = await response.json();
-                    setEvents(data.map(b => ({
+                    setEvents(data.bookings.map(b => ({
                         id: b.id, title: `[${b.dept}] ${b.name}`, start: b.startTime, end: b.endTime,
                         extendedProps: { ...b },
                         backgroundColor: b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : '#64748b',
                         borderColor: 'transparent'
                     })));
+
+                    const holidayMap = {};
+                    data.holidays.forEach(row => holidayMap[row[0]] = row[1]);
+                    setCustomHolidays(holidayMap);
+
                 } catch (e) { console.error(e); } finally { if (!silent) setLoading(false); }
             };
 
@@ -965,6 +972,37 @@
                                             <button type="button" onClick={handleDelete} className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 font-medium px-4 py-2.5 rounded-xl text-sm transition">예약 취소</button>
                                         )}
                                         <div className="flex-1 flex justify-end space-x-2">
+
+                                            {user.isAdmin && (
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        const isHoliday = !!customHolidays[selectedSlot.startDate];
+                                                        const name = isHoliday ? "" : "임시공휴일";
+                                                        setLoading(true);
+                                                        try {
+                                                            await fetch(GOOGLE_SCRIPT_URL, {
+                                                                method: 'POST',
+                                                                body: JSON.stringify({ action: "TOGGLE_HOLIDAY", date: selectedSlot.startDate, name: name })
+                                                            });
+                                                            await fetchBookings(); // 데이터 새로고침
+                                                            setShowForm(false);
+                                                            alert(isHoliday ? "공휴일이 해제되었습니다." : "공휴일로 지정되었습니다.");
+                                                        } catch (e) {
+                                                            alert("오류가 발생했습니다.");
+                                                        } finally {
+                                                            setLoading(false);
+                                                            calendarInstanceRef.current?.unselect();
+                                                        }
+                                                    }}
+                                                    className={`px-4 py-2.5 rounded-xl text-sm font-medium transition ${!!customHolidays[selectedSlot.startDate]
+                                                            ? "bg-amber-600 hover:bg-amber-700 text-white"
+                                                            : "bg-purple-600 hover:bg-purple-700 text-white"
+                                                        }`}
+                                                >
+                                                    {customHolidays[selectedSlot.startDate] ? "공휴일 해제" : "공휴일 지정"}
+                                                </button>
+                                            )}
                                             <button type="button" onClick={() => {
                                                 setShowForm(false);
                                                 calendarInstanceRef.current?.unselect();
