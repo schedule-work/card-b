@@ -175,6 +175,11 @@
         };
 
         const getHolidayName = (dateObj) => {
+
+            if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) {
+                return "제헌절";
+            }
+            
             const dateStr = [
                 dateObj.getFullYear(),
                 String(dateObj.getMonth() + 1).padStart(2, '0'),
@@ -188,6 +193,7 @@
                     if (publicH) return publicH.name;
                 }
             }
+            
             return FALLBACK_HOLIDAYS[dateStr] || null;
         };
 
