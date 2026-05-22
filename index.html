@@ -656,22 +656,20 @@
                 const actionType = formData.id ? "UPDATE" : "CREATE";
                 const isOwnerOrAdmin = user.isAdmin || !selectedEvent || String(selectedEvent.empNo || "").trim() === String(user.empNo || "").trim();
                 const finalEmpNo = isOwnerOrAdmin ? formData.empNo.trim() : selectedEvent.empNo;
-
-                const payload = {
-                    id: formData.id,
-                    dept: finalDept,
-                    name: formData.name,
-                    empNo: sheetSafeEmpNo,
-                    startTime: `${formData.startDate}T${formData.startTimePart}:00`,
-                    endTime: `${formData.endDate}T${formData.endTimePart}:00`,
-                    budget: finalBudget,
-                    purpose: formData.purpose,
-                    details: formData.details,
-                    contact: combinedContact
-                };
-
-                // try 블록 내부
                 try {
+                    const payload = {
+                        id: formData.id,
+                        dept: finalDept,
+                        name: formData.name,
+                        empNo: finalEmpNo,
+                        startTime: `${formData.startDate}T${formData.startTimePart}:00`,
+                        endTime: `${formData.endDate}T${formData.endTimePart}:00`,
+                        budget: finalBudget,
+                        purpose: formData.purpose,
+                        details: formData.details,
+                        contact: combinedContact
+                    };
+
                     await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: actionType, ...payload }) });
                     setLoading(false); // 성공 시 로딩 종료
                     setShowForm(false);
@@ -684,6 +682,7 @@
                     fetchBookings(true);
                     setTimeout(() => alert("저장되었습니다."), 50);
                 } catch (e) {
+                    console.error("저장 중 에러 발생:", e);
                     alert("오류 발생");
                     setLoading(false); // 실패 시 로딩 종료
                 }
