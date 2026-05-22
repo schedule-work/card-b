@@ -265,7 +265,7 @@
                 try {
                     const response = await fetch(GOOGLE_SCRIPT_URL + "?v=" + new Date().getTime());
                     const data = await response.json();
-                    setEvents(data.bookings.map(b => ({
+                    setEvents(data.bookings.map(b => {
                         const budgetColor = b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : '#64748b';
                         return {
                             id: b.id, title: `[${b.dept}] ${b.name}`, start: b.startTime, end: b.endTime,
