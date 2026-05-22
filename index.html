@@ -1024,61 +1024,67 @@
                                         )}
                                     </div>
 
-                                    <div className="flex space-x-2 pt-4 border-t border-slate-100 dark:border-slate-700 mt-4">
-                                        {formData.id && hasPermission && (
-                                            <button type="button" onClick={handleDelete} className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 font-medium px-4 py-2.5 rounded-xl text-sm transition">예약 취소</button>
-                                        )}
-                                        <div className="flex-1 flex justify-end space-x-2">
+                                    <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100 dark:border-slate-700 mt-4">
+    {formData.id && hasPermission && (
+        <button type="button" onClick={handleDelete} className="flex-1 sm:flex-none whitespace-nowrap bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 font-medium px-3 py-2.5 rounded-xl text-xs sm:text-sm transition">
+            예약 취소
+        </button>
+    )}
+    <div className="flex-1 flex gap-2 justify-end w-full sm:w-auto">
 
-                                            {user.isAdmin && (
-                                                <button
-                                                    type="button"
-                                                    onClick={async () => {
-                                                        const isHoliday = !!customHolidays[selectedSlot.startDate];
-                                                        const name = isHoliday ? "" : "임시공휴일";
-                                                        setLoading(true);
-                                                        try {
-                                                            await fetch(GOOGLE_SCRIPT_URL, {
-                                                                method: 'POST',
-                                                                body: JSON.stringify({ action: "TOGGLE_HOLIDAY", date: selectedSlot.startDate, name: name })
-                                                            });
+        {user.isAdmin && (
+            <button
+                type="button"
+                onClick={async () => {
+                    const isHoliday = !!customHolidays[selectedSlot.startDate];
+                    const name = isHoliday ? "" : "임시공휴일";
+                    setLoading(true);
+                    try {
+                        await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: "TOGGLE_HOLIDAY", date: selectedSlot.startDate, name: name })
+                        });
 
-                                                        setTimeout(async () => {
-                                                            await fetchBookings();
-                                                                calendarInstanceRef.current?.render();
-                                                                setLoading(false);
-                                                                alert(isHoliday ? "공휴일이 해제되었습니다." : "공휴일로 지정되었습니다.");
-                                                            }, 1500);
+                        setTimeout(async () => {
+                            await fetchBookings();
+                            calendarInstanceRef.current?.render();
+                            setLoading(false);
+                            alert(isHoliday ? "공휴일이 해제되었습니다." : "공휴일로 지정되었습니다.");
+                        }, 1500);
 
-                                                            setShowForm(false);
-                                                        } catch (e) {
-                                                            alert("오류가 발생했습니다.");
-                                                            setLoading(false);
-                                                        }
-                                                    }}
-                                                    className={`px-4 py-2.5 rounded-xl text-sm font-medium transition ${!!customHolidays[selectedSlot.startDate]
-                                                        ? "bg-amber-600 hover:bg-amber-700 text-white"
-                                                        : "bg-purple-600 hover:bg-purple-700 text-white"
-                                                        }`}
-                                                >
-                                                    {customHolidays[selectedSlot.startDate] ? "공휴일 해제" : "공휴일 지정"}
-                                                </button>
-                                            )}
-                                            <button type="button" onClick={() => {
-                                                setShowForm(false);
-                                                calendarInstanceRef.current?.unselect();
-                                            }} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">취소</button>
-                                            {hasPermission && (
-                                                <button
-                                                    type="submit"
-                                                    disabled={loading}
-                                                    className={`px-6 py-2.5 rounded-xl text-sm font-medium transition ${loading ? 'bg-gray-400 dark:bg-slate-600 cursor-not-allowed text-white' : 'bg-blue-700 text-white hover:bg-blue-800 dark:hover:bg-blue-600'}`}
-                                                >
-                                                    {loading ? '저장 중...' : '저장'}
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
+                        setShowForm(false);
+                    } catch (e) {
+                        alert("오류가 발생했습니다.");
+                        setLoading(false);
+                    }
+                }}
+                className={`flex-1 sm:flex-none whitespace-nowrap px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition ${!!customHolidays[selectedSlot.startDate]
+                        ? "bg-amber-600 hover:bg-amber-700 text-white"
+                        : "bg-purple-600 hover:bg-purple-700 text-white"
+                    }`}
+            >
+                {customHolidays[selectedSlot.startDate] ? "공휴일 해제" : "공휴일 지정"}
+            </button>
+        )}
+        
+        <button type="button" onClick={() => {
+            setShowForm(false);
+            calendarInstanceRef.current?.unselect();
+        }} className="flex-1 sm:flex-none whitespace-nowrap px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+            취소
+        </button>
+        
+        {hasPermission && (
+            <button
+                type="submit"
+                disabled={loading}
+                className={`flex-1 sm:flex-none whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition ${loading ? 'bg-gray-400 dark:bg-slate-600 cursor-not-allowed text-white' : 'bg-blue-700 text-white hover:bg-blue-800 dark:hover:bg-blue-600'}`}
+            >
+                {loading ? '저장 중...' : '저장'}
+            </button>
+        )}
+    </div>
+</div>
                                 </form>
                             </div>
                         </div>
