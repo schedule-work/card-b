@@ -266,11 +266,14 @@
                     const response = await fetch(GOOGLE_SCRIPT_URL + "?v=" + new Date().getTime());
                     const data = await response.json();
                     setEvents(data.bookings.map(b => ({
-                        id: b.id, title: `[${b.dept}] ${b.name}`, start: b.startTime, end: b.endTime,
-                        extendedProps: { ...b },
-                        backgroundColor: b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : '#64748b',
-                        borderColor: 'transparent'
-                    })));
+                        const budgetColor = b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : '#64748b';
+                        return {
+                            id: b.id, title: `[${b.dept}] ${b.name}`, start: b.startTime, end: b.endTime,
+                            extendedProps: { ...b, colorCode: budgetColor }, // ⭐ 컬러 코드 주입
+                            backgroundColor: 'transparent', // FullCalendar 기본 꽉 찬 배경 제거
+                            borderColor: 'transparent'
+                        };
+                    }));
 
                     const holidayMap = {};
                     data.holidays.forEach(row => holidayMap[row[0]] = row[1]);
@@ -374,7 +377,12 @@
                             };
                             const timeStr = `${getFormat(start)}~${getFormat(end)}`;
                             const dept = arg.event.title.split(']')[0] + ']';
-                            return { html: `<div class="fc-event-main-frame" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${timeStr}</b> ${dept}</div>` };
+                            const evColor = arg.event.extendedProps.colorCode || '#64748b';
+                            return { 
+                                html: `<div style="border-left: 4px solid ${evColor}; background-color: ${evColor}1A; padding: 2px 6px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem; color: var(--fc-neutral-text-color, #333);">
+                                    <b style="color: ${evColor};">${timeStr}</b> ${dept}
+                                </div>` 
+                            };
                         },
 
                         unselect: function () {
@@ -653,7 +661,7 @@
                     id: formData.id,
                     dept: finalDept,
                     name: formData.name,
-                    empNo: finalEmpNo,
+                    empNo: sheetSafeEmpNo,
                     startTime: `${formData.startDate}T${formData.startTimePart}:00`,
                     endTime: `${formData.endDate}T${formData.endTimePart}:00`,
                     budget: finalBudget,
