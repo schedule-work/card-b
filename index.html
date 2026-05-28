@@ -633,7 +633,7 @@
                     tempDate.setDate(tempDate.getDate() + 1);
                 }
 
-                    if (validDaysCount > 3) {
+                    if (!user.isAdmin && validDaysCount > 3) {
                         alert("원활한 카드 사용을 위해 장기 예약은 최대 3일(영업일 기준)까지만 가능합니다.");
                         return;
                     }
