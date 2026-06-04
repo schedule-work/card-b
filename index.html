@@ -483,9 +483,13 @@
                             const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
                             const toTimeStr = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 
+                            // 💡 불러온 사번의 홑따옴표 제거 후 비교
+                            const cleanEmpNo = String(props.empNo || "").replace(/^'/, "").trim();
+                            const cleanUserEmpNo = String(user.empNo || "").trim();
+
                             // 본인이거나 관리자라면 원본 사번을 보여주고, 타인이라면 앞자리 일부만 남기고 마스킹(예: 24****) 합니다.
-                            const isOwnerOrAdmin = user.isAdmin || String(props.empNo || "").trim() === String(user.empNo || "").trim();
-                            const displayedEmpNo = isOwnerOrAdmin ? props.empNo : String(props.empNo || "").slice(0, 2) + "****";
+                            const isOwnerOrAdmin = user.isAdmin || cleanEmpNo === cleanUserEmpNo;
+                            const displayedEmpNo = isOwnerOrAdmin ? cleanEmpNo : cleanEmpNo.slice(0, 2) + "****";
 
                             setFormData({
                                 id: props.id, name: props.name,
@@ -655,8 +659,8 @@
                 setLoading(true);
                 try {
                     const actionType = formData.id ? "UPDATE" : "CREATE";
-                    const isOwnerOrAdmin = user.isAdmin || !selectedEvent || String(selectedEvent.empNo || "").trim() === String(user.empNo || "").trim();
-                    const finalEmpNo = isOwnerOrAdmin ? String(formData.empNo || "").trim() : selectedEvent.empNo;
+                    const isOwnerOrAdmin = user.isAdmin || !selectedEvent || String(selectedEvent.empNo || "").replace(/^'/, "").trim() === String(user.empNo || "").trim();
+                    const finalEmpNo = isOwnerOrAdmin ? String(formData.empNo || "").trim() : String(selectedEvent.empNo || "").replace(/^'/, "").trim();
                     const payload = {
                         id: formData.id,
                         dept: finalDept,
@@ -710,8 +714,9 @@
                 if (!user) return false;
                 if (!selectedEvent) return true;
                 if (user.isAdmin) return true;
-                const eventEmpNo = String(selectedEvent.empNo || "").trim();
+                const eventEmpNo = String(selectedEvent.empNo || "").replace(/^'/, "").trim();
                 const userEmpNo = String(user.empNo || "").trim();
+                
                 return eventEmpNo === userEmpNo;
             }, [user, selectedEvent]);
 
