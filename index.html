@@ -593,9 +593,9 @@
             const handleSubmit = async (e) => {
                 e.preventDefault();
 
-                const finalDept = deptSelect === '직접 입력' ? deptCustom.trim() : deptSelect;
-                const finalBudget = budgetSelect === '기타' ? budgetCustom.trim() : budgetSelect;
-                const finalPhone1 = phone1Select === '기타' ? phone1Custom.trim() : phone1Select;
+                const finalDept = deptSelect === '직접 입력' ? String(deptCustom || "").trim() : deptSelect;
+                const finalBudget = budgetSelect === '기타' ? String(budgetCustom || "").trim() : budgetSelect;
+                const finalPhone1 = phone1Select === '기타' ? String(phone1Custom || "").trim() : phone1Select;
 
                 if (deptSelect === '선택') return alert("대여 부서를 선택해주세요.");
                 if (budgetSelect === '선택') return alert("사용 예산 구분을 선택해주세요.");
@@ -653,15 +653,15 @@
                 }
 
                 setLoading(true);
-                const actionType = formData.id ? "UPDATE" : "CREATE";
-                const isOwnerOrAdmin = user.isAdmin || !selectedEvent || String(selectedEvent.empNo || "").trim() === String(user.empNo || "").trim();
-                const finalEmpNo = isOwnerOrAdmin ? formData.empNo.trim() : selectedEvent.empNo;
                 try {
+                    const actionType = formData.id ? "UPDATE" : "CREATE";
+                    const isOwnerOrAdmin = user.isAdmin || !selectedEvent || String(selectedEvent.empNo || "").trim() === String(user.empNo || "").trim();
+                    const finalEmpNo = isOwnerOrAdmin ? String(formData.empNo || "").trim() : selectedEvent.empNo;
                     const payload = {
                         id: formData.id,
                         dept: finalDept,
                         name: formData.name,
-                        empNo: finalEmpNo,
+                        empNo: `'${finalEmpNo}`,
                         startTime: `${formData.startDate}T${formData.startTimePart}:00`,
                         endTime: `${formData.endDate}T${formData.endTimePart}:00`,
                         budget: finalBudget,
