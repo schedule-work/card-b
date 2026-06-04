@@ -234,6 +234,9 @@
 
             const [showNotice, setShowNotice] = React.useState(false);
             const [showForm, setShowForm] = React.useState(false);
+
+            const [showInstruction, setShowInstruction] = React.useState(false);
+            
             const [selectedEvent, setSelectedEvent] = React.useState(null);
             const [selectedSlot, setSelectedSlot] = React.useState(null);
 
@@ -249,6 +252,49 @@
             const [formData, setFormData] = React.useState({
                 id: '', name: '', empNo: '', startDate: '', startTimePart: '', endDate: '', endTimePart: '', purpose: '', details: ''
             });
+            
+            const openEventDetails = (props, startObj, endObj) => {
+                setSelectedEvent(props);
+                if (DEPARTMENTS.includes(props.dept)) {
+                    setDeptSelect(props.dept); setDeptCustom('');
+                } else {
+                    setDeptSelect('직접 입력'); setDeptCustom(props.dept);
+                }
+                if (['간호부', 'QI(적정진료관리팀)', '총무팀'].includes(props.budget)) {
+                    setBudgetSelect(props.budget); setBudgetCustom('');
+                } else {
+                    setBudgetSelect('기타'); setBudgetCustom(props.budget || '');
+                }
+                
+                const cleanContact = String(props.contact || "").replace(/^'/, "").trim();
+                const pParts = cleanContact.split('-');
+                if (['010', '011', '016'].includes(pParts[0])) {
+                    setPhone1Select(pParts[0] || '010'); setPhone1Custom('');
+                } else {
+                    setPhone1Select('기타'); setPhone1Custom(pParts[0] || '');
+                }
+                setPhone2(pParts[1] || ''); setPhone3(pParts[2] || '');
+
+                const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                const toTimeStr = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+
+                const cleanEmpNo = String(props.empNo || "").replace(/^'/, "").trim();
+                const cleanUserEmpNo = String(user.empNo || "").trim();
+                const isOwnerOrAdmin = user.isAdmin || cleanEmpNo === cleanUserEmpNo;
+                const displayedEmpNo = isOwnerOrAdmin ? cleanEmpNo : cleanEmpNo.slice(0, 2) + "****";
+
+                setFormData({
+                    id: props.id, name: props.name,
+                    empNo: displayedEmpNo,
+                    startDate: toDateStr(startObj), startTimePart: toTimeStr(startObj),
+                    endDate: toDateStr(endObj), endTimePart: toTimeStr(endObj),
+                    purpose: props.purpose, details: props.details
+                });
+
+                setSelectedSlot({ startDate: toDateStr(startObj), endDate: toDateStr(endObj) });
+                setShowListModal(false);
+                setShowForm(true);
+            };
 
             const startRangeStr = "2026-05-01";
             const maxDate = new Date(2026, 4, 1);
@@ -323,6 +369,11 @@
 
                 setUser(loggedInUser);
                 sessionStorage.setItem('cardPortalUser', JSON.stringify(loggedInUser));
+                
+                if (!isSuperAdmin) {
+                    setShowInstruction(true);
+                }
+                
             };
 
             React.useEffect(() => { if (user) fetchBookings(); }, [user]);
@@ -458,52 +509,30 @@
                             calendarInstanceRef.current.unselect();
                         },
                         eventClick: function (info) {
-                            const props = info.event.extendedProps;
-                            setSelectedEvent(props);
-                            if (DEPARTMENTS.includes(props.dept)) {
-                                setDeptSelect(props.dept); setDeptCustom('');
+                            if (window.innerWidth < 640) {
+                                // 모바일 화면: 즉시 예약 리스트 팝업 띄우기
+                                const calendar = info.view.calendar;
+                                const evStart = info.event.start;
+                                const sDate = evStart.getFullYear() + '-' + String(evStart.getMonth() + 1).padStart(2, '0') + '-' + String(evStart.getDate()).padStart(2, '0');
+
+                                setSelectedSlot({ startDate: sDate, endDate: sDate });
+
+                                const allFcEvents = calendar.getEvents();
+                                const clickedTime = new Date(sDate + "T00:00:00").getTime();
+                                const nextDayTime = clickedTime + (24 * 60 * 60 * 1000);
+
+                                const dayEvents = allFcEvents.filter(ev => {
+                                    return (ev.start.getTime() < nextDayTime) && (ev.end.getTime() > clickedTime);
+                                }).map(ev => ({
+                                    id: ev.id, title: ev.title, startObj: ev.start, endObj: ev.end, extendedProps: ev.extendedProps
+                                }));
+
+                                setSelectedDateReservations(dayEvents);
+                                setShowListModal(true);
                             } else {
-                                setDeptSelect('직접 입력'); setDeptCustom(props.dept);
+                                // PC 화면: 바로 상세 폼 띄우기
+                                openEventDetails(info.event.extendedProps, info.event.start, info.event.end);
                             }
-                            if (['간호부', 'QI(적정진료관리팀)', '총무팀'].includes(props.budget)) {
-                                setBudgetSelect(props.budget); setBudgetCustom('');
-                            } else {
-                                setBudgetSelect('기타'); setBudgetCustom(props.budget || '');
-                            }
-                            const pParts = (props.contact || '').split('-');
-                            if (['010', '011', '016'].includes(pParts[0])) {
-                                setPhone1Select(pParts[0] || '010'); setPhone1Custom('');
-                            } else {
-                                setPhone1Select('기타'); setPhone1Custom(pParts[0] || '');
-                            }
-                            setPhone2(pParts[1] || ''); setPhone3(pParts[2] || '');
-
-                            const start = new Date(props.startTime);
-                            const end = new Date(props.endTime);
-                            const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-                            const toTimeStr = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-
-                            // 💡 불러온 사번의 홑따옴표 제거 후 비교
-                            const cleanEmpNo = String(props.empNo || "").replace(/^'/, "").trim();
-                            const cleanUserEmpNo = String(user.empNo || "").trim();
-
-                            // 본인이거나 관리자라면 원본 사번을 보여주고, 타인이라면 앞자리 일부만 남기고 마스킹(예: 24****) 합니다.
-                            const isOwnerOrAdmin = user.isAdmin || cleanEmpNo === cleanUserEmpNo;
-                            const displayedEmpNo = isOwnerOrAdmin ? cleanEmpNo : cleanEmpNo.slice(0, 2) + "****";
-
-                            setFormData({
-                                id: props.id, name: props.name,
-                                empNo: displayedEmpNo,
-                                startDate: toDateStr(start), startTimePart: toTimeStr(start),
-                                endDate: toDateStr(end), endTimePart: toTimeStr(end),
-                                purpose: props.purpose, details: props.details
-                            });
-
-                            // ⭐ 이 코드가 추가되어야 터치 시 즉시 모달창이 열립니다!
-                            setSelectedSlot({ startDate: toDateStr(start), endDate: toDateStr(end) });
-
-                            setShowListModal(false);
-                            setShowForm(true);
                         },
                     });
 
@@ -665,7 +694,7 @@
                         id: formData.id,
                         dept: finalDept,
                         name: formData.name,
-                        empNo: `'${finalEmpNo}`,
+                        empNo: finalEmpNo,
                         startTime: `${formData.startDate}T${formData.startTimePart}:00`,
                         endTime: `${formData.endDate}T${formData.endTimePart}:00`,
                         budget: finalBudget,
@@ -833,7 +862,7 @@
                                             : `${formatDate(ev.startObj)} ${formatTime(ev.startObj)} ~ ${formatDate(ev.endObj)} ${formatTime(ev.endObj)}`;
 
                                         return (
-                                            <div key={ev.id} onClick={() => { setSelectedEvent(ev.extendedProps); setShowListModal(false); setShowForm(true); }} className="p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm flex flex-col gap-1 transition-colors">
+                                            <div key={ev.id} onClick={() => openEventDetails(ev.extendedProps, ev.startObj, ev.endObj)} className="p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm flex flex-col gap-1 transition-colors">
                                                 <span className="font-semibold text-blue-700 dark:text-blue-400">{ev.title}</span>
                                                 <span className="text-slate-500 dark:text-slate-400 text-xs">{timeDisplay}</span>
                                             </div>
@@ -1094,6 +1123,54 @@
                             </div>
                         </div>
                     )}
+                    {showInstruction && (
+                        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-100 dark:border-slate-700">
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-5 text-center">법인카드 예약 시스템 이용 안내</h3>
+                                
+                                <div className="space-y-5 text-sm text-slate-600 dark:text-slate-300 mb-6">
+                                    <div>
+                                        <h4 className="font-bold text-blue-700 dark:text-blue-400 mb-2 flex items-center">
+                                            <span className="text-lg mr-1">📌</span> [예약 및 이용]
+                                        </h4>
+                                        <ul className="list-disc pl-6 space-y-1.5 leading-relaxed">
+                                            <li>캘린더 해당 날짜의 빈 공간을 클릭하여 예약 신청</li>
+                                            <li>기존 예약과 시간 미중복 시 추가 예약 가능</li>
+                                            <li>대여 및 반납 시간: <strong className="text-slate-800 dark:text-slate-200">평일 08:30 ~ 17:30</strong></li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div>
+                                        <h4 className="font-bold text-red-600 dark:text-red-400 mb-2 flex items-center">
+                                            <span className="text-lg mr-1">⚠️</span> [예약 제한]
+                                        </h4>
+                                        <ul className="list-disc pl-6 space-y-1.5 leading-relaxed">
+                                            <li>예약 가능 기한: 신청일 기준 2개월 이내</li>
+                                            <li>주말 및 공휴일 예약 불가</li>
+                                            <li>최대 예약 일수: 평일 기준 3일 (장기 대여 시 사전 문의 요망)</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div>
+                                        <h4 className="font-bold text-emerald-600 dark:text-emerald-400 mb-2 flex items-center">
+                                            <span className="text-lg mr-1">🔄</span> [수정 및 취소]
+                                        </h4>
+                                        <ul className="list-disc pl-6 space-y-1.5 leading-relaxed">
+                                            <li>본인 예약 내역 클릭 시 상세 내용 수정 가능</li>
+                                            <li>본인 예약 건에 한하여 동일 사번 재로그인 시 취소 가능</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <button 
+                                    onClick={() => setShowInstruction(false)} 
+                                    className="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-3.5 rounded-xl shadow-md transition-colors text-sm"
+                                >
+                                    안내사항을 확인했습니다
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
