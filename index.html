@@ -329,7 +329,7 @@
                 try {
                     const data = await callApi({ action: 'GET_DETAIL', token: user.token, id }); const props = data.booking; setSelectedEvent(props);
                     if (DEPARTMENTS.includes(props.dept)) { setDeptSelect(props.dept); setDeptCustom(''); } else { setDeptSelect('직접 입력'); setDeptCustom(props.dept || ''); }
-                    if (['간호부', 'QI(적정진료관리팀)', '총무팀'].includes(props.budget)) { setBudgetSelect(props.budget); setBudgetCustom(''); } else { setBudgetSelect('기타'); setBudgetCustom(props.budget || ''); }
+                    if (['간호부', 'QI(적정진료관리팀)', '총무팀', '학생실습비'].includes(props.budget)) { setBudgetSelect(props.budget); setBudgetCustom(''); } else { setBudgetSelect('기타'); setBudgetCustom(props.budget || ''); }
                     if (props.contact) { const p = String(props.contact).replace(/^'/, '').trim().split('-'); if (['010', '011', '016'].includes(p[0])) { setPhone1Select(p[0] || '010'); setPhone1Custom(''); } else { setPhone1Select('기타'); setPhone1Custom(p[0] || ''); } setPhone2(p[1] || ''); setPhone3(p[2] || ''); } else { setPhone1Select('010'); setPhone1Custom(''); setPhone2(''); setPhone3(''); }
                     const toDateStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), toTimeStr = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
                     setFormData({ id: props.id, name: props.name || '', empNo: props.empNo || props.empNoMasked || '비공개', startDate: toDateStr(startObj), startTimePart: toTimeStr(startObj), endDate: toDateStr(endObj), endTimePart: toTimeStr(endObj), purpose: props.purpose || '', details: props.details || '' });
@@ -350,7 +350,7 @@
                     
                     const data = await callApi(payload); 
                     setEvents(data.bookings.map(b => { 
-                        const budgetColor = b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : '#64748b'; 
+                        const budgetColor = b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : b.budget === '학생실습비' ? '#8b5cf6' : '#64748b';
                         return { id: b.id, title: `[${b.dept}] ${b.name}`, start: b.startTime, end: b.endTime, extendedProps: { ...b, colorCode: budgetColor }, backgroundColor: 'transparent', borderColor: 'transparent' }; 
                     })); 
                     const holidayMap = {}; (data.holidays || []).forEach(row => holidayMap[row[0]] = row[1]); 
@@ -555,7 +555,7 @@
                     visibleEvents = events.filter(ev => {
                         const budget = ev.extendedProps?.budget || '';
                         if (budgetFilter === '기타') {
-                            return !['간호부', 'QI(적정진료관리팀)', '총무팀'].includes(budget);
+                            return !['간호부', 'QI(적정진료관리팀)', '총무팀', '학생실습비'].includes(budget);
                         }
                         return budget === budgetFilter;
                     });
@@ -610,7 +610,7 @@
                     id: '', name: user.name, empNo: user.empNo,
                     startDate: selectedSlot.startDate,
                     startTimePart: '',
-                    endDate: '',
+                    endDate: selectedSlot.endDate,
                     endTimePart: '',
                     purpose: '', details: ''
                 });
@@ -718,12 +718,12 @@
                     const payload = { id: formData.id, dept: finalDept, startTime: `${formData.startDate}T${formData.startTimePart}:00`, endTime: `${formData.endDate}T${formData.endTimePart}:00`, budget: finalBudget, purpose: formData.purpose, details: formData.details, contact: combinedContact };
                     const result = await callApi({ action: actionType, token: user.token, ...payload });
                     setLoading(false); setShowForm(false); calendarInstanceRef.current?.unselect();
-                    const tempId = formData.id || result.id || "temp-" + Date.now(), budgetColor = payload.budget === '간호부' ? '#3b82f6' : payload.budget === '총무팀' ? '#10b981' : payload.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : '#64748b';
+                    const tempId = formData.id || result.id || "temp-" + Date.now(), budgetColor = payload.budget === '간호부' ? '#3b82f6' : payload.budget === '총무팀' ? '#10b981' : payload.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : payload.budget === '학생실습비' ? '#8b5cf6' : '#64748b';
                     const newEvent = { id: tempId, title: `[${payload.dept}] ${user.name}`, start: payload.startTime, end: payload.endTime, extendedProps: { id: tempId, dept: payload.dept, name: user.name, startTime: payload.startTime, endTime: payload.endTime, budget: payload.budget, purpose: payload.purpose, isMine: true, canEdit: true, canViewContact: true, contactMasked: payload.contact.replace(/^(\d{2,3})-\d{3,4}-(\d{4})$/, '$1-****-$2'), colorCode: budgetColor }, backgroundColor: 'transparent', borderColor: 'transparent' };
                     setEvents(prev => formData.id ? prev.map(ev => String(ev.id) === String(formData.id) ? newEvent : ev) : [...prev, newEvent]); fetchBookings(true); showToast("예약이 저장되었습니다.");
                 } catch (e) {
                     console.error("저장 중 에러 발생:", e);
-                    alert("오류 발생");
+                    alert(e.message || "오류 발생");
                     setLoading(false);
                 }
             };
@@ -990,6 +990,7 @@
                                     { key: '간호부', label: '간호부' },
                                     { key: 'QI(적정진료관리팀)', label: 'QI' },
                                     { key: '총무팀', label: '총무팀' },
+                                    { key: '학생실습비', label: '학생실습비' },
                                     { key: '기타', label: '기타' }
                                 ].map(item => (
                                     <button
@@ -1204,6 +1205,7 @@
                                             <option value="간호부">간호부</option>
                                             <option value="QI(적정진료관리팀)">QI(적정진료관리팀)</option>
                                             <option value="총무팀">총무팀</option>
+                                            <option value="학생실습비">학생실습비</option>
                                             <option value="기타">기타</option>
                                         </select>
                                         {budgetSelect === '기타' && (
