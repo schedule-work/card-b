@@ -3,8 +3,15 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>DNS > Card-Portal</title>
+
+    <!-- ⚡ 성능 최적화를 위한 CDN Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://unpkg.com">
+
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone@7.23.9/babel.min.js"></script>
@@ -28,95 +35,445 @@
             background-color: #f8fafc;
         }
 
-        /* 기본 (라이트모드) 캘린더 스타일 */
+        /* -------------------------------------------------------------
+           1. 로딩 인디케이터 스타일 (Uiverse 기반 - 테마 블루 튜닝)
+        ------------------------------------------------------------- */
+        .typing-indicator {
+            width: 60px;
+            height: 28px;
+            position: relative;
+            margin: 0 auto;
+            z-index: 4;
+        }
+
+        .typing-circle {
+            width: 8px;
+            height: 8px;
+            position: absolute;
+            border-radius: 50%;
+            background-color: #2563eb;
+            left: 15%;
+            transform-origin: 50%;
+            animation: typing-circle7124 0.5s alternate infinite ease;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .typing-circle {
+                background-color: #60a5fa;
+            }
+        }
+
+        @keyframes typing-circle7124 {
+            0% {
+                top: 18px;
+                height: 5px;
+                border-radius: 50px 50px 25px 25px;
+                transform: scaleX(1.7);
+            }
+            40% {
+                height: 8px;
+                border-radius: 50%;
+                transform: scaleX(1);
+            }
+            100% {
+                top: 0%;
+            }
+        }
+
+        .typing-circle:nth-child(2) {
+            left: 45%;
+            animation-delay: 0.2s;
+        }
+
+        .typing-circle:nth-child(3) {
+            left: auto;
+            right: 15%;
+            animation-delay: 0.3s;
+        }
+
+        .typing-shadow {
+            width: 6px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: rgba(37, 99, 235, 0.25);
+            position: absolute;
+            top: 26px;
+            transform-origin: 50%;
+            z-index: 3;
+            left: 15%;
+            filter: blur(1px);
+            animation: typing-shadow046 0.5s alternate infinite ease;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .typing-shadow {
+                background-color: rgba(96, 165, 250, 0.3);
+            }
+        }
+
+        @keyframes typing-shadow046 {
+            0% {
+                transform: scaleX(1.5);
+            }
+            40% {
+                transform: scaleX(1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scaleX(0.2);
+                opacity: 0.4;
+            }
+        }
+
+        .typing-shadow:nth-child(4) {
+            left: 45%;
+            animation-delay: 0.2s;
+        }
+
+        .typing-shadow:nth-child(5) {
+            left: auto;
+            right: 15%;
+            animation-delay: 0.3s;
+        }
+
+        /* -------------------------------------------------------------
+           3. 세련된 모던 캘린더 UI 스타일 (Apple/Notion 스타일)
+        ------------------------------------------------------------- */
         .fc {
-            --fc-border-color: #e2e8f0;
-            --fc-today-bg-color: #f1f5f9;
-            background: white;
-            padding: 10px;
-            border-radius: 12px;
+            --fc-border-color: #f1f5f9;
+            --fc-today-bg-color: transparent;
+            --fc-neutral-bg-color: transparent;
+            background: #ffffff;
+            padding: 0.85rem 1rem;
+            border-radius: 1.25rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+            height: 100%;
+        }
+
+        /* ⚡ 캘린더 내부 스크롤바 투명화 (투박한 스크롤바 제거) */
+        .fc-scroller,
+        .fc-scroller-liquid-absolute {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+
+        .fc-scroller::-webkit-scrollbar,
+        .fc-scroller-liquid-absolute::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* 툴바 & 타이틀 */
+        .fc .fc-toolbar {
+            margin-bottom: 0.85rem !important;
+            gap: 0.75rem;
         }
 
         .fc .fc-toolbar-title {
-            font-size: 1.25rem !important;
-            font-weight: 600;
-            color: #1e293b;
+            font-size: 1.35rem !important;
+            font-weight: 800 !important;
+            color: #0f172a;
+            letter-spacing: -0.025em;
         }
 
-        .fc .fc-button-primary {
-            background-color: #1e40af !important;
-            border-color: #1e40af !important;
-            padding: 0.5rem 1rem;
+        /* 툴바 버튼 - 세련된 세그먼트 컨트롤러 스타일 */
+        .fc .fc-button {
+            background-color: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #475569 !important;
+            font-weight: 600 !important;
+            font-size: 0.75rem !important;
+            padding: 0.4rem 0.8rem !important;
+            border-radius: 0.6rem !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
 
-        .fc-event {
-            cursor: pointer;
-            padding: 2px 5px;
-            font-size: 0.75rem;
-            border-radius: 4px;
+        .fc .fc-button:hover {
+            background-color: #e2e8f0 !important;
+            color: #0f172a !important;
+            transform: translateY(-1px);
         }
 
-        .fc-day-sun a {
+        .fc .fc-button-active,
+        .fc .fc-button-primary:not(:disabled).fc-button-active {
+            background-color: #2563eb !important;
+            border-color: #2563eb !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+        }
+
+        .fc .fc-button-primary:disabled {
+            opacity: 0.4;
+        }
+
+        /* 요일 헤더 기본 스타일 */
+        .fc th {
+            padding: 0.5rem 0 !important;
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+            color: #64748b !important;
+            border: none !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+
+        /* ⚡ 토요일(파랑) / 일요일(빨강) 요일 헤더 색상 명확화 */
+        .fc th.fc-day-sun,
+        .fc th.fc-day-sun a,
+        .fc-col-header-cell.fc-day-sun {
             color: #ef4444 !important;
-            text-decoration: none;
         }
 
-        .fc-day-sat a {
-            color: #3b82f6 !important;
-            text-decoration: none;
+        .fc th.fc-day-sat,
+        .fc th.fc-day-sat a,
+        .fc-col-header-cell.fc-day-sat {
+            color: #2563eb !important;
         }
 
-        .holiday-text {
-            color: #ef4444;
-            font-size: 0.7rem;
-            font-weight: 500;
-            margin-top: 2px;
+        /* ⚡ 요일별 비대칭 너비: 평일(월~금) 와이드 17%, 주말(토/일) 슬림 7.5% */
+        .fc-col-header-cell.fc-day-sun,
+        .fc-daygrid-day.fc-day-sun,
+        .fc-col-header-cell.fc-day-sat,
+        .fc-daygrid-day.fc-day-sat {
+            width: 7.5% !important;
+            min-width: 36px;
+            background-color: rgba(248, 250, 252, 0.7);
         }
 
-        .holiday-day a {
+        .fc-col-header-cell:not(.fc-day-sun):not(.fc-day-sat),
+        .fc-daygrid-day:not(.fc-day-sun):not(.fc-day-sat) {
+            width: 17% !important;
+        }
+
+        /* 날짜 셀 */
+        .fc-theme-standard td, .fc-theme-standard th {
+            border-color: #f1f5f9;
+        }
+
+        .fc-scrollgrid {
+            border-color: #e2e8f0 !important;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .fc-daygrid-day {
+            transition: background-color 0.15s ease;
+        }
+
+        .fc-daygrid-day:hover {
+            background-color: #f8faff;
+        }
+
+        /* ⚡ 날짜 상단 헤더 래퍼 (너비 100% 확장하여 가로 정렬 절대 보장) */
+        .fc .fc-daygrid-day-top {
+            padding: 3px 5px !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            float: none !important;
+        }
+
+        .fc .fc-daygrid-day-top a.fc-daygrid-day-number,
+        .fc .fc-daygrid-day-number {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-decoration: none !important;
+            float: none !important;
+            box-sizing: border-box !important;
+        }
+
+        .fc-day-header-wrap {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            gap: 4px !important;
+            white-space: nowrap !important;
+        }
+
+        .fc-day-num {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 20px !important;
+            height: 20px !important;
+            font-size: 0.78rem !important;
+            font-weight: 600 !important;
+            border-radius: 9999px !important;
+            color: #334155;
+            transition: all 0.2s ease;
+        }
+
+        /* ⚡ 공휴일/대체공휴일 세련된 폰트 텍스트 스타일 */
+        .fc-holiday-name {
+            font-size: 0.68rem !important;
+            font-weight: 600 !important;
             color: #ef4444 !important;
+            white-space: nowrap !important;
+            letter-spacing: -0.025em !important;
+            line-height: 1 !important;
+            display: inline-block !important;
+        }
+
+        /* ⚡ 오늘 날짜(Today) 셀 한눈에 띄는 프리미엄 하이라이트 */
+        .fc-day-today {
+            background-color: rgba(37, 99, 235, 0.07) !important;
+            box-shadow: inset 0 0 0 1.5px rgba(37, 99, 235, 0.45) !important;
+        }
+
+        .fc-day-today .fc-day-num {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            font-weight: 800 !important;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.5) !important;
+        }
+
+        /* 오늘 표시 미니 라벨 */
+        .fc-today-badge {
+            display: inline-flex !important;
+            align-items: center !important;
+            font-size: 0.62rem !important;
+            font-weight: 800 !important;
+            color: #2563eb !important;
+            background-color: rgba(37, 99, 235, 0.12) !important;
+            padding: 1px 4px !important;
+            border-radius: 3px !important;
+            white-space: nowrap !important;
+            line-height: 1.1 !important;
+        }
+
+        /* ⚡ 일요일(빨강) / 토요일(파랑) / 공휴일 날짜 숫자 색상 분리 */
+        .fc-day-sun .fc-day-num,
+        .holiday-day .fc-day-num {
+            color: #ef4444 !important;
+        }
+
+        .fc-day-sat .fc-day-num {
+            color: #2563eb !important;
         }
 
         .fc-highlight {
-            background-color: rgba(59, 130, 246, 0.15) !important;
+            background-color: rgba(59, 130, 246, 0.12) !important;
             box-shadow: inset 0 0 0 2px #3b82f6 !important;
+            border-radius: 6px;
+        }
+
+        /* 모던 이벤트 카드 애니메이션 */
+        .fc-event {
+            margin: 1.5px 2px !important;
+            border-radius: 5px !important;
+            border: none !important;
+            transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+        }
+
+        .fc-event:hover {
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+            z-index: 20 !important;
         }
 
         /* 모바일 최적화 */
         @media (max-width: 640px) {
+            .fc {
+                padding: 0.5rem;
+                border-radius: 0.85rem;
+            }
+
             .fc .fc-toolbar-title {
-                font-size: 0.9rem !important;
+                font-size: 1.05rem !important;
             }
 
             .fc .fc-button {
-                padding: 0.2rem 0.4rem !important;
+                padding: 0.3rem 0.55rem !important;
                 font-size: 0.7rem !important;
             }
 
             .fc-header-toolbar {
                 flex-wrap: wrap;
-                gap: 5px;
+                gap: 6px;
+            }
+
+            .fc-col-header-cell.fc-day-sun,
+            .fc-daygrid-day.fc-day-sun,
+            .fc-col-header-cell.fc-day-sat,
+            .fc-daygrid-day.fc-day-sat {
+                width: 8% !important;
+                min-width: 28px;
             }
         }
 
         /* 다크모드 캘린더 전용 스타일 */
         @media (prefers-color-scheme: dark) {
             body {
-                background-color: #0f172a;
+                background-color: #0b1120;
             }
 
             .fc {
                 background: #1e293b;
+                border-color: #334155;
                 --fc-border-color: #334155;
-                --fc-today-bg-color: #0f172a;
                 --fc-page-bg-color: #1e293b;
                 --fc-neutral-text-color: #cbd5e1;
                 --fc-list-event-hover-bg-color: #334155;
+                box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
                 color: #f8fafc;
             }
 
+            .fc-col-header-cell.fc-day-sun,
+            .fc-daygrid-day.fc-day-sun,
+            .fc-col-header-cell.fc-day-sat,
+            .fc-daygrid-day.fc-day-sat {
+                background-color: rgba(15, 23, 42, 0.45);
+            }
+
             .fc .fc-toolbar-title {
-                color: #f1f5f9 !important;
+                color: #f8fafc !important;
+            }
+
+            .fc .fc-button {
+                background-color: #334155 !important;
+                border-color: #475569 !important;
+                color: #e2e8f0 !important;
+            }
+
+            .fc .fc-button:hover {
+                background-color: #475569 !important;
+                color: #ffffff !important;
+            }
+
+            .fc .fc-button-active,
+            .fc .fc-button-primary:not(:disabled).fc-button-active {
+                background-color: #3b82f6 !important;
+                border-color: #3b82f6 !important;
+                color: #ffffff !important;
+                box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4) !important;
+            }
+
+            .fc th {
+                color: #94a3b8 !important;
+                border-bottom-color: #334155 !important;
+            }
+
+            .fc th.fc-day-sun,
+            .fc th.fc-day-sun a,
+            .fc-col-header-cell.fc-day-sun {
+                color: #f87171 !important;
+            }
+
+            .fc th.fc-day-sat,
+            .fc th.fc-day-sat a,
+            .fc-col-header-cell.fc-day-sat {
+                color: #60a5fa !important;
             }
 
             .fc-theme-standard td,
@@ -124,26 +481,44 @@
                 border-color: #334155;
             }
 
-            .fc-col-header-cell-cushion,
-            .fc-daygrid-day-number {
-                color: #e2e8f0 !important;
-            }
-
             .fc-scrollgrid {
                 border-color: #334155 !important;
             }
 
-            .fc-day-sun a,
-            .holiday-day a {
+            .fc-daygrid-day:hover {
+                background-color: #243247;
+            }
+
+            .fc-day-num {
+                color: #cbd5e1;
+            }
+
+            .fc-day-today {
+                background-color: rgba(59, 130, 246, 0.15) !important;
+                box-shadow: inset 0 0 0 1.5px rgba(59, 130, 246, 0.6) !important;
+            }
+
+            .fc-day-today .fc-day-num {
+                background-color: #3b82f6 !important;
+                color: #ffffff !important;
+            }
+
+            .fc-today-badge {
+                color: #60a5fa !important;
+                background-color: rgba(59, 130, 246, 0.22) !important;
+            }
+
+            .fc-holiday-name {
                 color: #f87171 !important;
             }
 
-            .fc-day-sat a {
-                color: #60a5fa !important;
+            .fc-day-sun .fc-day-num,
+            .holiday-day .fc-day-num {
+                color: #f87171 !important;
             }
 
-            .holiday-text {
-                color: #f87171;
+            .fc-day-sat .fc-day-num {
+                color: #60a5fa !important;
             }
         }
     </style>
@@ -193,14 +568,335 @@
             "15:30", "16:00", "16:30", "17:00", "17:30"
         ];
 
+        // -------------------------------------------------------------
+        // 2. React Bits - DotField 컴포넌트 (React Bits 정품 규격 + 사이트 테마 컬러)
+        // -------------------------------------------------------------
+        const TWO_PI = Math.PI * 2;
+
+        const DotField = React.memo(({
+            dotRadius = 1.5,
+            dotSpacing = 14,
+            cursorRadius = 500,
+            cursorForce = 0.1,
+            bulgeOnly = true,
+            bulgeStrength = 67,
+            glowRadius = 160,
+            sparkle = false,
+            waveAmplitude = 0,
+            gradientFrom,
+            gradientTo,
+            glowColor,
+            ...rest
+        }) => {
+            const canvasRef = React.useRef(null);
+            const svgRef = React.useRef(null);
+            const glowRef = React.useRef(null);
+            const dotsRef = React.useRef([]);
+            const mouseRef = React.useRef({ x: -9999, y: -9999, prevX: -9999, prevY: -9999, speed: 0 });
+            const rafRef = React.useRef(null);
+            const sizeRef = React.useRef({ w: 0, h: 0, offsetX: 0, offsetY: 0 });
+            const glowOpacity = React.useRef(0);
+            const engagement = React.useRef(0);
+            const propsRef = React.useRef({});
+            const rebuildRef = React.useRef(null);
+            const glowIdRef = React.useRef(`dot-field-glow-${Math.random().toString(36).slice(2, 9)}`);
+
+            // ⚡ 다크모드 / 라이트모드 자동 감지
+            const [isDarkMode, setIsDarkMode] = React.useState(() => {
+                return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            });
+
+            React.useEffect(() => {
+                const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+                const handler = (e) => setIsDarkMode(e.matches);
+                mediaQuery.addEventListener('change', handler);
+                return () => mediaQuery.removeEventListener('change', handler);
+            }, []);
+
+            // ⚡ 웹사이트 맞춤형 컬러 (라이트모드 시인성 강화 & 다크모드 자연스러움 유지)
+            const activeGradFrom = gradientFrom || (isDarkMode ? 'rgba(96, 165, 250, 0.40)' : 'rgba(37, 99, 235, 0.55)');
+            const activeGradTo = gradientTo || (isDarkMode ? 'rgba(192, 132, 252, 0.30)' : 'rgba(124, 58, 237, 0.42)');
+            const activeGlow = glowColor || (isDarkMode ? 'rgba(96, 165, 250, 0.20)' : 'rgba(37, 99, 235, 0.22)');
+
+            propsRef.current = { 
+                dotRadius, 
+                dotSpacing, 
+                cursorRadius, 
+                cursorForce, 
+                bulgeOnly, 
+                bulgeStrength, 
+                sparkle, 
+                waveAmplitude, 
+                gradientFrom: activeGradFrom, 
+                gradientTo: activeGradTo 
+            };
+
+            React.useEffect(() => {
+                const canvas = canvasRef.current;
+                const glowEl = glowRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d', { alpha: true });
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                let resizeTimer;
+
+                function resize() {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(doResize, 100);
+                }
+
+                function doResize() {
+                    const rect = canvas.parentElement.getBoundingClientRect();
+                    const w = rect.width;
+                    const h = rect.height;
+
+                    canvas.width = w * dpr;
+                    canvas.height = h * dpr;
+                    canvas.style.width = `${w}px`;
+                    canvas.style.height = `${h}px`;
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                    sizeRef.current = {
+                        w,
+                        h,
+                        offsetX: rect.left + window.scrollX,
+                        offsetY: rect.top + window.scrollY,
+                    };
+
+                    buildDots(w, h);
+                }
+
+                function buildDots(w, h) {
+                    const p = propsRef.current;
+                    const step = p.dotRadius + p.dotSpacing;
+                    const cols = Math.floor(w / step);
+                    const rows = Math.floor(h / step);
+                    const padX = (w % step) / 2;
+                    const padY = (h % step) / 2;
+                    const dots = new Array(rows * cols);
+                    let idx = 0;
+
+                    for (let row = 0; row < rows; row++) {
+                        for (let col = 0; col < cols; col++) {
+                            const ax = padX + col * step + step / 2;
+                            const ay = padY + row * step + step / 2;
+                            dots[idx++] = { ax, ay, sx: ax, sy: ay, vx: 0, vy: 0, x: ax, y: ay };
+                        }
+                    }
+                    dotsRef.current = dots;
+                }
+
+                function onMouseMove(e) {
+                    const s = sizeRef.current;
+                    mouseRef.current.x = e.pageX - s.offsetX;
+                    mouseRef.current.y = e.pageY - s.offsetY;
+                }
+
+                function updateMouseSpeed() {
+                    const m = mouseRef.current;
+                    const dx = m.prevX - m.x;
+                    const dy = m.prevY - m.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    m.speed += (dist - m.speed) * 0.5;
+                    if (m.speed < 0.001) m.speed = 0;
+                    m.prevX = m.x;
+                    m.prevY = m.y;
+                }
+
+                const speedInterval = setInterval(updateMouseSpeed, 20);
+
+                let frameCount = 0;
+
+                function tick() {
+                    frameCount++;
+                    const dots = dotsRef.current;
+                    const m = mouseRef.current;
+                    const { w, h } = sizeRef.current;
+                    const p = propsRef.current;
+                    const len = dots.length;
+                    const t = frameCount * 0.02;
+
+                    const targetEngagement = Math.min(m.speed / 5, 1);
+                    engagement.current += (targetEngagement - engagement.current) * 0.06;
+                    if (engagement.current < 0.001) engagement.current = 0;
+                    const eng = engagement.current;
+
+                    glowOpacity.current += (eng - glowOpacity.current) * 0.08;
+
+                    if (glowEl) {
+                        glowEl.setAttribute('cx', m.x);
+                        glowEl.setAttribute('cy', m.y);
+                        glowEl.style.opacity = glowOpacity.current;
+                    }
+
+                    ctx.clearRect(0, 0, w, h);
+
+                    const grad = ctx.createLinearGradient(0, 0, w, h);
+                    grad.addColorStop(0, p.gradientFrom);
+                    grad.addColorStop(1, p.gradientTo);
+                    ctx.fillStyle = grad;
+
+                    const cr = p.cursorRadius;
+                    const crSq = cr * cr;
+                    const rad = p.dotRadius / 2;
+                    const isBulge = p.bulgeOnly;
+
+                    ctx.beginPath();
+
+                    for (let i = 0; i < len; i++) {
+                        const d = dots[i];
+                        const dx = m.x - d.ax;
+                        const dy = m.y - d.ay;
+                        const distSq = dx * dx + dy * dy;
+
+                        if (distSq < crSq && eng > 0.01) {
+                            const dist = Math.sqrt(distSq);
+                            if (isBulge) {
+                                const t = 1 - dist / cr;
+                                const push = t * t * p.bulgeStrength * eng;
+                                const angle = Math.atan2(dy, dx);
+                                d.sx += (d.ax - Math.cos(angle) * push - d.sx) * 0.15;
+                                d.sy += (d.ay - Math.sin(angle) * push - d.sy) * 0.15;
+                            } else {
+                                const angle = Math.atan2(dy, dx);
+                                const move = (500 / dist) * (m.speed * p.cursorForce);
+                                d.vx += Math.cos(angle) * -move;
+                                d.vy += Math.sin(angle) * -move;
+                            }
+                        } else if (isBulge) {
+                            d.sx += (d.ax - d.sx) * 0.1;
+                            d.sy += (d.ay - d.sy) * 0.1;
+                        }
+
+                        if (!isBulge) {
+                            d.vx *= 0.9;
+                            d.vy *= 0.9;
+                            d.x = d.ax + d.vx;
+                            d.y = d.ay + d.vy;
+                            d.sx += (d.x - d.sx) * 0.1;
+                            d.sy += (d.y - d.sy) * 0.1;
+                        }
+
+                        let drawX = d.sx;
+                        let drawY = d.sy;
+                        if (p.waveAmplitude > 0) {
+                            drawY += Math.sin(d.ax * 0.03 + t) * p.waveAmplitude;
+                            drawX += Math.cos(d.ay * 0.03 + t * 0.7) * p.waveAmplitude * 0.5;
+                        }
+
+                        if (p.sparkle) {
+                            const hash = ((i * 2654435761) ^ (frameCount >> 3)) >>> 0;
+                            if ((hash % 100) < 3) {
+                                ctx.moveTo(drawX + rad * 1.8, drawY);
+                                ctx.arc(drawX, drawY, rad * 1.8, 0, TWO_PI);
+                            } else {
+                                ctx.moveTo(drawX + rad, drawY);
+                                ctx.arc(drawX, drawY, rad, 0, TWO_PI);
+                            }
+                        } else {
+                            ctx.moveTo(drawX + rad, drawY);
+                            ctx.arc(drawX, drawY, rad, 0, TWO_PI);
+                        }
+                    }
+
+                    ctx.fill();
+
+                    rafRef.current = requestAnimationFrame(tick);
+                }
+
+                doResize();
+                window.addEventListener('resize', resize);
+                window.addEventListener('mousemove', onMouseMove, { passive: true });
+                rafRef.current = requestAnimationFrame(tick);
+
+                rebuildRef.current = () => {
+                    const { w, h } = sizeRef.current;
+                    if (w > 0 && h > 0) buildDots(w, h);
+                };
+
+                return () => {
+                    cancelAnimationFrame(rafRef.current);
+                    clearInterval(speedInterval);
+                    clearTimeout(resizeTimer);
+                    window.removeEventListener('resize', resize);
+                    window.removeEventListener('mousemove', onMouseMove);
+                };
+            }, []);
+
+            React.useEffect(() => {
+                rebuildRef.current?.();
+            }, [dotRadius, dotSpacing, isDarkMode]);
+
+            return (
+                <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden" {...rest}>
+                    <canvas
+                        ref={canvasRef}
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                        }}
+                    />
+                    <svg
+                        ref={svgRef}
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                            pointerEvents: 'none',
+                        }}
+                    >
+                        <defs>
+                            <radialGradient id={glowIdRef.current}>
+                                <stop offset="0%" stopColor={activeGlow} />
+                                <stop offset="100%" stopColor="transparent" />
+                            </radialGradient>
+                        </defs>
+                        <circle
+                            ref={glowRef}
+                            cx="-9999"
+                            cy="-9999"
+                            r={glowRadius}
+                            fill={`url(#${glowIdRef.current})`}
+                            style={{ opacity: 0, willChange: 'opacity' }}
+                        />
+                    </svg>
+                </div>
+            );
+        });
+
+        // -------------------------------------------------------------
+        // 메인 App 컴포넌트
+        // -------------------------------------------------------------
         function App() {
             const [user, setUser] = React.useState(() => { const saved = sessionStorage.getItem('cardPortalUser'); if (!saved) return null; try { const parsed = JSON.parse(saved); return parsed?.token ? parsed : null; } catch (e) { return null; } });
             const [loginInput, setLoginInput] = React.useState({ name: '', empNo: '' });
             
-            // 상태값 관리
-            const [events, setEvents] = React.useState([]);
-            const [isFetchingStatus, setIsFetchingStatus] = React.useState(true); // ⭐ 상태 조회 중 표시
-            const [customHolidays, setCustomHolidays] = React.useState({});
+            // ⚡ SWR 로컬 캐시 초기화 (체감 로딩 속도 0초 달성)
+            const [events, setEvents] = React.useState(() => {
+                try {
+                    const cached = localStorage.getItem('cached_card_events');
+                    return cached ? JSON.parse(cached) : [];
+                } catch (e) {
+                    return [];
+                }
+            });
+
+            const [customHolidays, setCustomHolidays] = React.useState(() => {
+                try {
+                    const cached = localStorage.getItem('cached_card_holidays');
+                    return cached ? JSON.parse(cached) : {};
+                } catch (e) {
+                    return {};
+                }
+            });
+
+            const [isFetchingStatus, setIsFetchingStatus] = React.useState(() => {
+                const hasCache = !!localStorage.getItem('cached_card_events');
+                return !hasCache; // 캐시가 있으면 대기 스피너 생략
+            });
+
             const customHolidaysRef = React.useRef(customHolidays);
             
             React.useEffect(() => {
@@ -349,12 +1045,22 @@
                     if (user?.token) payload.token = user.token;
                     
                     const data = await callApi(payload); 
-                    setEvents(data.bookings.map(b => { 
+                    const parsedEvents = data.bookings.map(b => { 
                         const budgetColor = b.budget === '간호부' ? '#3b82f6' : b.budget === '총무팀' ? '#10b981' : b.budget === 'QI(적정진료관리팀)' ? '#f59e0b' : b.budget === '학생실습비' ? '#8b5cf6' : '#64748b';
                         return { id: b.id, title: `[${b.dept}] ${b.name}`, start: b.startTime, end: b.endTime, extendedProps: { ...b, colorCode: budgetColor }, backgroundColor: 'transparent', borderColor: 'transparent' }; 
-                    })); 
-                    const holidayMap = {}; (data.holidays || []).forEach(row => holidayMap[row[0]] = row[1]); 
+                    });
+                    
+                    setEvents(parsedEvents);
+                    try {
+                        localStorage.setItem('cached_card_events', JSON.stringify(parsedEvents));
+                    } catch (e) {}
+
+                    const holidayMap = {}; 
+                    (data.holidays || []).forEach(row => holidayMap[row[0]] = row[1]); 
                     setCustomHolidays(holidayMap); 
+                    try {
+                        localStorage.setItem('cached_card_holidays', JSON.stringify(holidayMap));
+                    } catch (e) {}
                 }
                 catch (e) { 
                     console.error(e); 
@@ -365,13 +1071,10 @@
                 }
             };
             
+            // ⚡ 유저 토큰 변경 시 1회 백그라운드 동기화
             React.useEffect(() => { 
                 fetchBookings(true); 
-            }, []); 
-            
-            React.useEffect(() => { 
-                if (user) fetchBookings(true); 
-            }, [user]);
+            }, [user?.token]);
 
             const handleLogin = async (e) => {
                 e.preventDefault(); const trimmedName = loginInput.name.trim(), empNo = loginInput.empNo.trim().toUpperCase(); if (!trimmedName || !empNo) return alert('이름과 사번을 정확히 입력해주세요.'); setLoading(true);
@@ -381,6 +1084,45 @@
 
             const handleAdminAuth = async () => { const pin = window.prompt('관리자 PIN을 입력해주세요.'); if (pin === null) return; const cleanPin = String(pin).trim().toLowerCase(); if (!cleanPin) return alert('관리자 PIN을 입력해주세요.'); setLoading(true); try { const data = await callApi({ action: 'ADMIN_AUTH', token: user.token, pin: cleanPin }); const upgradedUser = { ...user, ...data.user, token: user.token }; setUser(upgradedUser); sessionStorage.setItem('cardPortalUser', JSON.stringify(upgradedUser)); showToast('관리자 인증이 완료되었습니다.'); await fetchBookings(true); } catch (e) { alert(e.message); } finally { setLoading(false); } };
 
+            const renderDayCellContent = (arg) => {
+                const dayNumber = arg.dayNumberText.replace('일', '');
+                const holidayName = getHolidayName(arg.date);
+                const isToday = arg.isToday;
+                const dayOfWeek = arg.date.getDay(); // 0: 일요일, 6: 토요일
+
+                // ⚡ 일요일(빨강), 토요일(파랑), 공휴일(빨강), 오늘(흰색/블루배경), 평일(기본)
+                let numColor = '';
+                if (!isToday) {
+                    if (dayOfWeek === 0 || holidayName) {
+                        numColor = 'color: #ef4444 !important; font-weight: 700;';
+                    } else if (dayOfWeek === 6) {
+                        numColor = 'color: #2563eb !important; font-weight: 700;';
+                    }
+                }
+
+                let leftTag = null;
+                if (holidayName && arg.view.type === 'dayGridMonth') {
+                    leftTag = `<span class="fc-holiday-name" style="font-size: 11px; font-weight: 600; color: #ef4444; white-space: nowrap; line-height: 1; letter-spacing: -0.02em;" title="${holidayName}">${holidayName}</span>`;
+                } else if (isToday && arg.view.type === 'dayGridMonth') {
+                    leftTag = `<span class="fc-today-badge" style="font-size: 10px; font-weight: 800; color: #2563eb; background-color: rgba(37,99,235,0.12); padding: 1px 4px; border-radius: 3px; white-space: nowrap; line-height: 1.1;">오늘</span>`;
+                }
+
+                if (leftTag) {
+                    return { 
+                        html: `<div style="display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; min-width: 0 !important; gap: 4px !important; white-space: nowrap !important;">
+                            ${leftTag}
+                            <span class="fc-day-num" style="${numColor}">${dayNumber}</span>
+                        </div>` 
+                    };
+                }
+
+                return { 
+                    html: `<div style="display: flex !important; justify-content: flex-end !important; align-items: center !important; width: 100% !important;">
+                        <span class="fc-day-num" style="${numColor}">${dayNumber}</span>
+                    </div>` 
+                };
+            };
+
             React.useEffect(() => {
                 if (!user) return;
                 if (!calendarContainerRef.current) return;
@@ -388,6 +1130,8 @@
 
                 const calendar = new FullCalendar.Calendar(calendarContainerRef.current, {
                     height: '100%',
+                    expandRows: true,
+                    handleWindowResize: true,
                     locale: 'ko',
                     selectable: true,
                     selectLongPressDelay: 0,
@@ -400,7 +1144,12 @@
                     headerToolbar: {
                         left: 'prev,next today',
                         center: 'title',
-                        right: 'dayGridMonth,timeGridDay'
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    buttonText: {
+                        month: 'Month',
+                        week: 'Week',
+                        day: 'Day'
                     },
 
                     dayCellClassNames: function (arg) {
@@ -408,33 +1157,32 @@
                         return [];
                     },
 
-                    dayCellContent: function (arg) {
-                        const dayNumber = arg.dayNumberText.replace('일', '');
-                        const holidayName = getHolidayName(arg.date);
-                        if (holidayName && arg.view.type === 'dayGridMonth') {
-                            return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
-                        }
-                        return { html: `<span>${dayNumber}</span>` };
-                    },
+                    dayCellContent: renderDayCellContent,
 
                     eventContent: function (arg) {
                         const start = new Date(arg.event.start);
                         const end = new Date(arg.event.end);
-                        const getFormat = (d) => {
+                        
+                        // ⚡ 시간 포맷팅: 9A30-3P 형식
+                        const formatSingle = (d) => {
                             let h = d.getHours();
-                            let m = d.getMinutes();
+                            const m = d.getMinutes();
                             const ampm = h < 12 ? 'A' : 'P';
-                            if (h > 12) h -= 12;
-                            if (h === 0) h = 12;
-                            const mStr = m === 0 ? '' : m;
-                            return `${h}${ampm}${mStr}`;
+                            let displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
+                            const mStr = m === 0 ? '' : String(m).padStart(2, '0');
+                            return `${displayH}${ampm}${mStr}`;
                         };
-                        const timeStr = `${getFormat(start)}~${getFormat(end)}`;
-                        const dept = arg.event.title.split(']')[0] + ']';
-                        const evColor = arg.event.extendedProps.colorCode || '#64748b';
+                        const timeStr = `${formatSingle(start)}-${formatSingle(end)}`;
+                        const rawTitle = arg.event.title || '';
+                        const dept = rawTitle.includes(']') ? rawTitle.split(']')[0].replace('[', '') : rawTitle;
+                        const evColor = arg.event.extendedProps?.colorCode || '#3b82f6';
+                        
+                        // ⚡ 세련된 소프트 파스텔 한 줄 포맷: [시간 / 부서] (예: 2P30-5P / 50병동)
                         return { 
-                            html: `<div style="border-left: 4px solid ${evColor}; background-color: ${evColor}1A; padding: 2px 6px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem; color: var(--fc-neutral-text-color, #333);">
-                                <b style="color: ${evColor};">${timeStr}</b> ${dept}
+                            html: `<div style="background-color: ${evColor}12; border-left: 2.5px solid ${evColor}99;" class="w-full px-1.5 py-0.5 rounded text-[11px] flex items-center gap-1.5 leading-normal select-none overflow-hidden whitespace-nowrap" title="${timeStr} / ${dept}">
+                                <span class="font-bold shrink-0 text-slate-800 dark:text-slate-100 text-[10.5px]">${timeStr}</span>
+                                <span class="text-slate-300 dark:text-slate-600 text-[9.5px] shrink-0 font-light">/</span>
+                                <span class="font-medium text-[11px] truncate text-slate-600 dark:text-slate-300">${dept}</span>
                             </div>` 
                         };
                     },
@@ -569,50 +1317,39 @@
             React.useEffect(() => {
                 if (calendarInstanceRef.current) {
                     calendarInstanceRef.current.setOption('dayCellClassNames', function (arg) {
-                        const yyyy = arg.date.getFullYear();
-                        const mm = String(arg.date.getMonth() + 1).padStart(2, '0');
-                        const dd = String(arg.date.getDate()).padStart(2, '0');
-                        const dateStr = `${yyyy}-${mm}-${dd}`;
-
-                        if (customHolidays[dateStr] || getHolidayName(arg.date)) {
+                        if (getHolidayName(arg.date)) {
                             return ['holiday-day'];
                         }
                         return [];
                     });
                     
-                    calendarInstanceRef.current.setOption('dayCellContent', function (arg) {
-                        const dayNumber = arg.dayNumberText.replace('일', '');
-                        const yyyy = arg.date.getFullYear();
-                        const mm = String(arg.date.getMonth() + 1).padStart(2, '0');
-                        const dd = String(arg.date.getDate()).padStart(2, '0');
-                        const dateStr = `${yyyy}-${mm}-${dd}`;
-
-                        const holidayName = customHolidays[dateStr] || getHolidayName(arg.date);
-
-                        if (holidayName && arg.view.type === 'dayGridMonth') {
-                            return { html: `<div class="flex flex-col items-center"><span>${dayNumber}</span><span class="holiday-text">${holidayName}</span></div>` };
-                        }
-                        return { html: `<span>${dayNumber}</span>` };
-                    });
-                    
+                    calendarInstanceRef.current.setOption('dayCellContent', renderDayCellContent);
                     calendarInstanceRef.current.render();
                 }
             }, [customHolidays]);
 
+            // ⚡ 3. 자동 입력 보조 (스마트 기본값 및 동기화)
             const confirmNotice = () => {
                 setShowNotice(false);
                 setDeptSelect('선택'); setDeptCustom('');
-                setBudgetSelect('선택'); setBudgetCustom('');
+                setBudgetSelect('간호부'); // 가장 많이 사용하는 기본 예산 자동 지정
+                setBudgetCustom('');
                 setPhone1Select('010'); setPhone1Custom('');
                 setPhone2(''); setPhone3('');
 
+                const sDate = selectedSlot?.startDate || '';
+                const eDate = selectedSlot?.endDate || sDate;
+
                 setFormData({
-                    id: '', name: user.name, empNo: user.empNo,
-                    startDate: selectedSlot.startDate,
-                    startTimePart: '',
-                    endDate: selectedSlot.endDate,
-                    endTimePart: '',
-                    purpose: '', details: ''
+                    id: '', 
+                    name: user.name, 
+                    empNo: user.empNo,
+                    startDate: sDate,
+                    startTimePart: '09:00', // 업무 시작 기본 시간
+                    endDate: eDate,
+                    endTimePart: '12:00',   // 기본 오전 대여 추천
+                    purpose: '', 
+                    details: ''
                 });
                 setShowForm(true);
             };
@@ -626,6 +1363,37 @@
                 if (typeof getHolidayName === 'function' && getHolidayName(date)) return false;
 
                 return true;
+            };
+
+            // ⚡ 시작일 변경 시 반납일 자동 동기화
+            const handleStartDateChange = (newStartDate) => {
+                setFormData(prev => {
+                    const shouldSyncEnd = !prev.endDate || prev.endDate < newStartDate;
+                    return {
+                        ...prev,
+                        startDate: newStartDate,
+                        endDate: shouldSyncEnd ? newStartDate : prev.endDate
+                    };
+                });
+            };
+
+            // ⚡ 시작시간 변경 시 반납시간 스마트 추천 (자동 입력)
+            const handleStartTimeChange = (newStartTime) => {
+                setFormData(prev => {
+                    let updatedEndTime = prev.endTimePart;
+                    if (!prev.endTimePart || (prev.startDate === prev.endDate && prev.endTimePart <= newStartTime)) {
+                        // 2시간 뒤 또는 당일 17:30 자동 설정
+                        const [h, m] = newStartTime.split(':').map(Number);
+                        const endHour = Math.min(h + 2, 17);
+                        const endStr = `${String(endHour).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        updatedEndTime = TIME_OPTIONS.includes(endStr) ? endStr : '17:30';
+                    }
+                    return {
+                        ...prev,
+                        startTimePart: newStartTime,
+                        endTimePart: updatedEndTime
+                    };
+                });
             };
 
             const handleSubmit = async (e) => {
@@ -739,31 +1507,42 @@
             const handleLogout = async () => { const token = user?.token; try { if (token) await callApi({ action: 'LOGOUT', token }); } catch (e) {} finally { setUser(null); sessionStorage.removeItem('cardPortalUser'); setSelectedEvent(null); setShowForm(false); setShowListModal(false); setShowNotice(false); setShowMyBookings(false); } };
 
 
-            // ⭐ 비로그인 (메인 로그인 화면) 영역
+            // ---------------------------------------------------------
+            // ⭐ 1 & 2. 비로그인 (메인 로그인 화면) 영역 + DotField 배경
+            // ---------------------------------------------------------
             if (!user) {
                 return (
-                    <div className="h-dvh flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 transition-colors duration-200">
-                        <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 border border-slate-100 dark:border-slate-700 transition-colors duration-200">
+                    <div className="relative h-dvh w-full flex items-center justify-center bg-gradient-to-br from-blue-50/60 via-slate-50 to-indigo-50/40 dark:from-[#070d18] dark:via-[#0b1120] dark:to-[#111827] px-4 transition-colors duration-200 overflow-hidden">
+                        
+                        {/* 2. 인터랙티브 캔버스 배경 (초고선명 비비드 도트) */}
+                        <DotField />
+
+                        {/* 메인 로그인 카드 (프리미엄 글래스모피즘) */}
+                        <div className="relative z-10 max-w-md w-full bg-white/85 dark:bg-slate-800/85 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(30,58,138,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-7 sm:p-9 border border-white/70 dark:border-slate-700/70 transition-all">
                             
                             <div className="text-center mb-6 select-none">
                                 <h2 
-                                    className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition"
+                                    className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition"
                                     onClick={() => window.location.reload()}
                                 >
                                     간호부 법인카드 예약 시스템
                                 </h2>
-                                <p className="text-sm text-slate-400 dark:text-slate-400 mt-2">이름과 사번을 정확히 입력해 주세요.</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">이름과 사번을 입력하여 로그인해 주세요.</p>
                             </div>
             
-                            {/* --- [상태창] 현재 대여 가능 / 다음 예약 표시 영역 --- */}
-                            <div className="mb-6 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-3 min-h-[64px] flex flex-col justify-center transition-all select-none">
+                            {/* --- [상태창] 실시간 로딩 타이핑 인디케이터 적용 --- */}
+                            <div className="mb-6 bg-slate-50/80 dark:bg-slate-700/40 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-3 min-h-[64px] flex flex-col justify-center transition-all select-none">
                                 {isFetchingStatus ? (
-                                    <div className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400">
-                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span className="text-xs font-medium">실시간 상태 조회 중...</span>
+                                    <div className="flex flex-col items-center justify-center py-1">
+                                        <div className="typing-indicator scale-75">
+                                            <div className="typing-circle"></div>
+                                            <div className="typing-circle"></div>
+                                            <div className="typing-circle"></div>
+                                            <div className="typing-shadow"></div>
+                                            <div className="typing-shadow"></div>
+                                            <div className="typing-shadow"></div>
+                                        </div>
+                                        <span className="text-[11px] font-medium text-slate-400 dark:text-slate-400 mt-1">실시간 상태 조회 중...</span>
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-between gap-3">
@@ -818,9 +1597,12 @@
                                         placeholder="사번 5자리 입력"
                                     />
                                 </div>
-                                <button type="submit" disabled={loading} className="w-full bg-blue-700 hover:bg-blue-800 disabled:bg-slate-400 text-white font-medium py-3 rounded-xl shadow-lg shadow-blue-700/10 transition text-sm">{loading ? '접속 중...' : '시스템 접속'}</button>
+                                <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-semibold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition text-sm flex items-center justify-center">
+                                    {loading ? '접속 중...' : '시스템 접속'}
+                                </button>
                             </form>
                         </div>
+
                         <div className="fixed bottom-14 sm:bottom-4 right-3 sm:right-4 z-[40] text-right pointer-events-none opacity-80 select-none">
                             <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
                                 &copy; vico.yj All rights reserved. <span className="mx-1 text-slate-300 dark:text-slate-600">|</span> codeyj@duck.com
@@ -863,11 +1645,12 @@
                         <div className="hidden md:flex absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[30] items-center gap-3 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2 shadow-sm select-none transition-all whitespace-nowrap">
                             {isFetchingStatus ? (
                                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 px-1 py-0.5">
-                                    <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span className="text-xs font-medium">실시간 조회 중...</span>
+                                    <div className="typing-indicator scale-50 -my-2">
+                                        <div className="typing-circle"></div>
+                                        <div className="typing-circle"></div>
+                                        <div className="typing-circle"></div>
+                                    </div>
+                                    <span className="text-xs font-medium">조회 중...</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-4">
@@ -906,17 +1689,34 @@
                         </div>
 
                         {/* 우측: 유저 및 컨트롤 버튼 */}
-                        <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-3 relative z-10">
-                            <span className="text-sm text-slate-600 dark:text-slate-300">
+                        <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-2 sm:space-x-3 relative z-10">
+                            <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 shrink-0">
                                 <strong className="text-slate-900 dark:text-white">{user.name}</strong> 님
                             </span>
 
-                            <div className="flex items-center space-x-2">
-                                {user.canAdminAuth && !user.isAdmin && (<button onClick={handleAdminAuth} className="px-3 py-2 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-bold transition">관리자 인증</button>)}
-                                {user.isAdmin && (<span className="px-2.5 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[11px] font-bold">관리자</span>)}
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                                {user.canAdminAuth && !user.isAdmin && (
+                                    <button 
+                                        onClick={handleAdminAuth} 
+                                        className="p-1.5 sm:px-3 sm:py-2 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95"
+                                        title="관리자 인증"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:hidden" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        <span className="hidden sm:inline">관리자 인증</span>
+                                    </button>
+                                )}
+                                {user.isAdmin && (
+                                    <span className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] sm:text-[11px] font-bold">
+                                        관리자
+                                    </span>
+                                )}
+
+                                {/* ⚡ 내 예약 (모바일에서는 하단 탭바를 사용하므로 숨김) */}
                                 <button
                                     onClick={() => setShowMyBookings(true)}
-                                    className="relative flex items-center px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition"
+                                    className="hidden sm:flex relative items-center px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition"
                                 >
                                     내 예약
                                     {myBookings.length > 0 && (
@@ -925,28 +1725,49 @@
                                         </span>
                                     )}
                                 </button>
-                                <button onClick={fetchBookings} className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-md">
-                                    <span>🔄 새로고침</span>
+
+                                {/* ⚡ 새로고침 (모바일: 컴팩트 아이콘 버튼 / 데스크탑: 텍스트+아이콘) */}
+                                <button 
+                                    onClick={() => fetchBookings(false)} 
+                                    className="p-2 sm:px-3.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5"
+                                    title="새로고침"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform active:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <span className="hidden sm:inline">새로고침</span>
                                 </button>
-                                <button onClick={handleLogout} className="px-2 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition">
-                                    로그아웃
+
+                                {/* ⚡ 로그아웃 (모바일: 아이콘 버튼 / 데스크탑: 텍스트 버튼) */}
+                                <button 
+                                    onClick={handleLogout} 
+                                    className="p-2 sm:px-2.5 sm:py-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-medium transition active:scale-95 flex items-center justify-center"
+                                    title="로그아웃"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                                    </svg>
+                                    <span className="hidden sm:inline">로그아웃</span>
                                 </button>
                             </div>
                         </div>
                     </header>
 
-                    <main className="flex-1 w-full p-2 sm:p-4 pb-16 sm:pb-4 min-h-0 flex flex-col relative">
+                    <main className="flex-1 w-full p-2 sm:p-4 pb-20 sm:pb-4 min-h-0 flex flex-col relative">
                         
-                        {/* 모바일용 상태창 (화면이 작아서 헤더 중앙에 카드를 못 띄울 때 나타남) */}
+                        {/* 모바일용 상태창 */}
                         <div className="md:hidden shrink-0 mb-2 space-y-2">
                             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between gap-3 shadow-sm select-none">
                                 {isFetchingStatus ? (
-                                    <div className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 min-h-[40px] w-full">
-                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span className="text-xs font-medium">실시간 상태 조회 중...</span>
+                                    <div className="flex flex-col items-center justify-center min-h-[40px] w-full">
+                                        <div className="typing-indicator scale-75">
+                                            <div className="typing-circle"></div>
+                                            <div className="typing-circle"></div>
+                                            <div className="typing-circle"></div>
+                                            <div className="typing-shadow"></div>
+                                            <div className="typing-shadow"></div>
+                                            <div className="typing-shadow"></div>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-between gap-3 w-full">
@@ -1013,14 +1834,19 @@
                             <div ref={calendarContainerRef} id="calendar" className="w-full h-full"></div>
                         </div>
 
+                        {/* 로딩 전체화면 오버레이 (타이핑 인디케이터 적용) */}
                         {loading && (
-                            <div className="fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999]">
-                                <div className="bg-white dark:bg-slate-800 px-6 py-4 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 flex items-center space-x-3">
-                                    <svg className="animate-spin h-6 w-6 text-blue-700 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span className="text-sm font-bold text-blue-700 dark:text-blue-400">동기화 중...</span>
+                            <div className="fixed inset-0 bg-black/30 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
+                                <div className="bg-white/95 dark:bg-slate-800/95 px-8 py-6 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col items-center gap-3 select-none">
+                                    <div className="typing-indicator scale-90">
+                                        <div className="typing-circle"></div>
+                                        <div className="typing-circle"></div>
+                                        <div className="typing-circle"></div>
+                                        <div className="typing-shadow"></div>
+                                        <div className="typing-shadow"></div>
+                                        <div className="typing-shadow"></div>
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">처리 중입니다...</span>
                                 </div>
                             </div>
                         )}
@@ -1184,6 +2010,7 @@
                                 </div>
 
                                 <form onSubmit={handleSubmit} className="space-y-4">
+                                    {/* 부서 선택 (Datalist 지원) */}
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여 부서</label>
                                         <select disabled={!hasPermission} value={deptSelect} onChange={e => setDeptSelect(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors">
@@ -1191,10 +2018,26 @@
                                             {DEPARTMENTS.map(dept => (
                                                 <option key={dept} value={dept}>{dept}</option>
                                             ))}
-                                            <option value="직접 입력">직접 입력</option>
+                                            <option value="직접 입력">직접 입력 (검색)</option>
                                         </select>
                                         {deptSelect === '직접 입력' && (
-                                            <input type="text" disabled={!hasPermission} required value={deptCustom} onChange={e => setDeptCustom(e.target.value)} className="w-full mt-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" placeholder="정확한 부서명으로 기입" />
+                                            <div className="mt-2">
+                                                <input 
+                                                    type="text" 
+                                                    list="dept-datalist"
+                                                    disabled={!hasPermission} 
+                                                    required 
+                                                    value={deptCustom} 
+                                                    onChange={e => setDeptCustom(e.target.value)} 
+                                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors" 
+                                                    placeholder="부서명을 입력하거나 목록에서 선택" 
+                                                />
+                                                <datalist id="dept-datalist">
+                                                    {DEPARTMENTS.map(dept => (
+                                                        <option key={`dl-${dept}`} value={dept} />
+                                                    ))}
+                                                </datalist>
+                                            </div>
                                         )}
                                     </div>
 
@@ -1224,6 +2067,7 @@
                                         </div>
                                     </div>
 
+                                    {/* 시작 및 반납 시간 자동 동기화 영역 */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full overflow-hidden">
                                         <div>
                                             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여 시작일 및 시간</label>
@@ -1233,14 +2077,14 @@
                                                     disabled={!hasPermission}
                                                     required
                                                     value={formData.startDate}
-                                                    onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                                                    onChange={e => handleStartDateChange(e.target.value)}
                                                     className="w-3/5 min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
                                                 />
                                                 <select
                                                     disabled={!hasPermission}
                                                     required
                                                     value={formData.startTimePart}
-                                                    onChange={e => setFormData({ ...formData, startTimePart: e.target.value })}
+                                                    onChange={e => handleStartTimeChange(e.target.value)}
                                                     className="w-2/5 min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
                                                 >
                                                     <option value="" disabled>선택</option>
@@ -1432,7 +2276,8 @@
                         </div>
                     )}
 
-                    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-3 py-2">
+                    {/* 모바일 하단 네비게이션 (Safe-Area 대응) */}
+                    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                         <div className="grid grid-cols-3 gap-1">
                             <button
                                 onClick={() => {
