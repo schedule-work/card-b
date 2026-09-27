@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>DNS > Card-Portal</title>
 
     <!-- ⚡ 성능 최적화를 위한 CDN Preconnect -->
@@ -156,6 +156,8 @@
         .fc-scroller-liquid-absolute {
             scrollbar-width: none !important;
             -ms-overflow-style: none !important;
+            -webkit-overflow-scrolling: touch !important;
+            overscroll-behavior: contain;
         }
 
         .fc-scroller::-webkit-scrollbar,
@@ -382,8 +384,74 @@
             z-index: 20 !important;
         }
 
+        /* ⚡ "+n개 더보기" 링크 (dayMaxEventRows로 셀 높이가 넘칠 때 노출) */
+        .fc-daygrid-more-link {
+            font-size: 0.68rem !important;
+            font-weight: 700 !important;
+            color: #2563eb !important;
+            margin: 1px 2px !important;
+        }
+
+        .fc-daygrid-more-link:hover {
+            color: #1d4ed8 !important;
+            text-decoration: none !important;
+        }
+
+        .fc-popover {
+            border-radius: 0.85rem !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.12) !important;
+            overflow: hidden;
+        }
+
+        .fc-popover-header {
+            background-color: #f8fafc !important;
+            font-weight: 700 !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+
+        .fc-popover-body {
+            max-height: 50vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0.35rem !important;
+        }
+
         /* 모바일 최적화 */
         @media (max-width: 640px) {
+            .fc-scroller,
+            .fc-scroller-liquid-absolute {
+                overscroll-behavior: auto;
+                touch-action: pan-y;
+                overflow-x: hidden !important;
+            }
+
+            .fc,
+            .fc-view-harness,
+            .fc-scrollgrid,
+            .fc-scrollgrid-section,
+            .fc-scrollgrid-sync-table,
+            .fc-daygrid-body table {
+                max-width: 100% !important;
+                width: 100% !important;
+                overflow-x: hidden !important;
+            }
+
+            .fc-scrollgrid-sync-table,
+            .fc-daygrid-body table {
+                table-layout: fixed !important;
+            }
+
+            .fc-col-header-cell,
+            .fc-daygrid-day,
+            .fc-col-header-cell.fc-day-sun,
+            .fc-daygrid-day.fc-day-sun,
+            .fc-col-header-cell.fc-day-sat,
+            .fc-daygrid-day.fc-day-sat {
+                width: auto !important;
+                min-width: 0 !important;
+            }
+
             .fc {
                 padding: 0.5rem;
                 border-radius: 0.85rem;
@@ -520,6 +588,24 @@
             .fc-day-sat .fc-day-num {
                 color: #60a5fa !important;
             }
+
+            .fc-daygrid-more-link {
+                color: #60a5fa !important;
+            }
+
+            .fc-daygrid-more-link:hover {
+                color: #93c5fd !important;
+            }
+
+            .fc-popover {
+                background-color: #1e293b !important;
+                border-color: #334155 !important;
+            }
+
+            .fc-popover-header {
+                background-color: #243247 !important;
+                color: #f8fafc !important;
+            }
         }
     </style>
 
@@ -567,6 +653,13 @@
             "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00",
             "15:30", "16:00", "16:30", "17:00", "17:30"
         ];
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
 
         // -------------------------------------------------------------
         // 2. React Bits - DotField 컴포넌트 (React Bits 정품 규격 + 사이트 테마 컬러)
@@ -966,6 +1059,43 @@
             const [budgetFilter, setBudgetFilter] = React.useState('전체');
             const [toast, setToast] = React.useState(null);
             const [currentTime, setCurrentTime] = React.useState(new Date());
+            const [feedbackDialog, setFeedbackDialog] = React.useState(null);
+            const feedbackResolverRef = React.useRef(null);
+
+            const openFeedbackDialog = (kind, message) => new Promise(resolve => {
+                feedbackResolverRef.current = resolve;
+                setFeedbackDialog({ kind, message, value: '' });
+            });
+
+            const closeFeedbackDialog = (result) => {
+                const resolve = feedbackResolverRef.current;
+                feedbackResolverRef.current = null;
+                setFeedbackDialog(null);
+                resolve?.(result);
+            };
+
+            // 브라우저 기본 alert/confirm/prompt 대신 사이트 스타일 안내창을 사용합니다.
+            const alert = (message) => { openFeedbackDialog('message', String(message)); };
+            const confirm = (message) => openFeedbackDialog('confirm', String(message));
+            const prompt = (message) => openFeedbackDialog('prompt', String(message));
+
+            React.useEffect(() => {
+                const hasOpenDialog = showMyBookings || showListModal || showNotice || showForm || showInstruction || feedbackDialog;
+                if (!hasOpenDialog) return undefined;
+
+                const handleEscape = (event) => {
+                    if (event.key !== 'Escape') return;
+                    setShowMyBookings(false);
+                    setShowListModal(false);
+                    setShowNotice(false);
+                    setShowForm(false);
+                    setShowInstruction(false);
+                    if (feedbackDialog) closeFeedbackDialog(feedbackDialog.kind === 'prompt' ? null : false);
+                };
+
+                document.addEventListener('keydown', handleEscape);
+                return () => document.removeEventListener('keydown', handleEscape);
+            }, [showMyBookings, showListModal, showNotice, showForm, showInstruction, feedbackDialog]);
             
             React.useEffect(() => {
                 const timer = setInterval(() => {
@@ -1007,9 +1137,29 @@
                 return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
             };
                         
-            const callApi = async (payload) => { 
-                const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
-                const data = await response.json(); 
+            const callApi = async (payload) => {
+                let response;
+                try {
+                    response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+                } catch (error) {
+                    throw new Error('서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.');
+                }
+
+                if (!response.ok) {
+                    throw new Error(`서버 오류(${response.status})가 발생했습니다.`);
+                }
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch (error) {
+                    throw new Error('서버 응답을 읽을 수 없습니다. 잠시 후 다시 시도해주세요.');
+                }
+
                 if (!data.success) { 
                     if (data.code === 'UNAUTHORIZED') { 
                         sessionStorage.removeItem('cardPortalUser'); 
@@ -1082,7 +1232,7 @@
                 catch (e) { alert(e.message); } finally { setLoading(false); }
             };
 
-            const handleAdminAuth = async () => { const pin = window.prompt('관리자 PIN을 입력해주세요.'); if (pin === null) return; const cleanPin = String(pin).trim().toLowerCase(); if (!cleanPin) return alert('관리자 PIN을 입력해주세요.'); setLoading(true); try { const data = await callApi({ action: 'ADMIN_AUTH', token: user.token, pin: cleanPin }); const upgradedUser = { ...user, ...data.user, token: user.token }; setUser(upgradedUser); sessionStorage.setItem('cardPortalUser', JSON.stringify(upgradedUser)); showToast('관리자 인증이 완료되었습니다.'); await fetchBookings(true); } catch (e) { alert(e.message); } finally { setLoading(false); } };
+            const handleAdminAuth = async () => { const pin = await prompt('관리자 PIN을 입력해주세요.'); if (pin === null) return; const cleanPin = String(pin).trim().toLowerCase(); if (!cleanPin) return alert('관리자 PIN을 입력해주세요.'); setLoading(true); try { const data = await callApi({ action: 'ADMIN_AUTH', token: user.token, pin: cleanPin }); const upgradedUser = { ...user, ...data.user, token: user.token }; setUser(upgradedUser); sessionStorage.setItem('cardPortalUser', JSON.stringify(upgradedUser)); showToast('관리자 인증이 완료되었습니다.'); await fetchBookings(true); } catch (e) { alert(e.message); } finally { setLoading(false); } };
 
             const renderDayCellContent = (arg) => {
                 const dayNumber = arg.dayNumberText.replace('일', '');
@@ -1102,7 +1252,8 @@
 
                 let leftTag = null;
                 if (holidayName && arg.view.type === 'dayGridMonth') {
-                    leftTag = `<span class="fc-holiday-name" style="font-size: 11px; font-weight: 600; color: #ef4444; white-space: nowrap; line-height: 1; letter-spacing: -0.02em;" title="${holidayName}">${holidayName}</span>`;
+                    const safeHolidayName = escapeHtml(holidayName);
+                    leftTag = `<span class="fc-holiday-name" style="font-size: 11px; font-weight: 600; color: #ef4444; white-space: nowrap; line-height: 1; letter-spacing: -0.02em;" title="${safeHolidayName}">${safeHolidayName}</span>`;
                 } else if (isToday && arg.view.type === 'dayGridMonth') {
                     leftTag = `<span class="fc-today-badge" style="font-size: 10px; font-weight: 800; color: #2563eb; background-color: rgba(37,99,235,0.12); padding: 1px 4px; border-radius: 3px; white-space: nowrap; line-height: 1.1;">오늘</span>`;
                 }
@@ -1123,6 +1274,29 @@
                 };
             };
 
+            // ⚡ 일/주간(시간표) 뷰 진입 시 스크롤 없이 바로 "지금"이 보이도록 스크롤 위치 계산 (여유 1시간 포함, 근무시간 범위로 고정)
+            // ⚡ 하루에 보여줄 예약 최대 줄 수 (화면 크기에 따라 고정값으로 계산 -> "true" 자동계산의 날짜별 오차 제거)
+            const getDayMaxEventRows = () => {
+                const w = window.innerWidth;
+                if (w < 480) return 2;
+                if (w < 768) return 3;
+                return 4;
+            };
+
+            // ⚡ 모바일에서는 시간표를 30분 단위 대신 1시간 단위로 그려서 총 높이를 줄임 (일/주간 뷰 스크롤 최소화)
+            const getSlotDuration = () => (window.innerWidth < 640 ? '01:00:00' : '00:30:00');
+
+            const getNowScrollTime = () => {
+                const now = new Date();
+                const nowMin = now.getHours() * 60 + now.getMinutes();
+                const minMin = 8 * 60 + 30; // slotMinTime
+                const maxMin = 17 * 60 + 30; // slotMaxTime
+                const targetMin = Math.min(Math.max(nowMin - 60, minMin), maxMin);
+                const h = Math.floor(targetMin / 60);
+                const m = targetMin % 60;
+                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+            };
+
             React.useEffect(() => {
                 if (!user) return;
                 if (!calendarContainerRef.current) return;
@@ -1131,6 +1305,19 @@
                 const calendar = new FullCalendar.Calendar(calendarContainerRef.current, {
                     height: '100%',
                     expandRows: true,
+                    dayMaxEventRows: getDayMaxEventRows(),
+                    eventOrder: 'start',
+                    scrollTime: getNowScrollTime(),
+                    nowIndicator: true,
+                    datesSet: function (info) {
+                        if (info.view.type === 'timeGridDay' || info.view.type === 'timeGridWeek') {
+                            info.view.calendar.scrollToTime(getNowScrollTime());
+                        }
+                    },
+                    windowResize: function (arg) {
+                        arg.view.calendar.setOption('dayMaxEventRows', getDayMaxEventRows());
+                        arg.view.calendar.setOption('slotDuration', getSlotDuration());
+                    },
                     handleWindowResize: true,
                     locale: 'ko',
                     selectable: true,
@@ -1139,6 +1326,7 @@
                     allDaySlot: false,
                     slotMinTime: '08:30:00',
                     slotMaxTime: '17:30:00',
+                    slotDuration: getSlotDuration(),
                     validRange: { start: '2026-05-01' },
 
                     headerToolbar: {
@@ -1176,13 +1364,17 @@
                         const rawTitle = arg.event.title || '';
                         const dept = rawTitle.includes(']') ? rawTitle.split(']')[0].replace('[', '') : rawTitle;
                         const evColor = arg.event.extendedProps?.colorCode || '#3b82f6';
+                        const safeTime = escapeHtml(timeStr);
+                        const safeDept = escapeHtml(dept);
+                        const isMine = arg.event.extendedProps?.isMine === true;
                         
                         // ⚡ 세련된 소프트 파스텔 한 줄 포맷: [시간 / 부서] (예: 2P30-5P / 50병동)
                         return { 
-                            html: `<div style="background-color: ${evColor}12; border-left: 2.5px solid ${evColor}99;" class="w-full px-1.5 py-0.5 rounded text-[11px] flex items-center gap-1.5 leading-normal select-none overflow-hidden whitespace-nowrap" title="${timeStr} / ${dept}">
-                                <span class="font-bold shrink-0 text-slate-800 dark:text-slate-100 text-[10.5px]">${timeStr}</span>
+                            html: `<div style="background-color: ${evColor}12; border-left: 2.5px solid ${isMine ? '#2563eb' : evColor}99; box-shadow: ${isMine ? 'inset 0 0 0 1px rgba(37,99,235,0.22)' : 'none'};" class="w-full px-1.5 py-0.5 rounded text-[11px] flex items-center gap-1.5 leading-normal select-none overflow-hidden whitespace-nowrap" title="${isMine ? 'Me · ' : ''}${safeTime} / ${safeDept}">
+                                <span class="font-bold shrink-0 text-slate-800 dark:text-slate-100 text-[10.5px]">${safeTime}</span>
                                 <span class="text-slate-300 dark:text-slate-600 text-[9.5px] shrink-0 font-light">/</span>
-                                <span class="font-medium text-[11px] truncate text-slate-600 dark:text-slate-300">${dept}</span>
+                                <span class="font-medium text-[11px] truncate text-slate-600 dark:text-slate-300">${safeDept}</span>
+                                ${isMine ? '<span class="shrink-0 rounded bg-blue-100 text-blue-700 px-1 text-[9px] font-bold">Me</span>' : ''}
                             </div>` 
                         };
                     },
@@ -1281,9 +1473,13 @@
 
                 calendar.render();
                 calendarInstanceRef.current = calendar;
+                calendar.today();
 
                 setTimeout(() => {
                     calendar.updateSize();
+                    if (window.matchMedia('(max-width: 640px)').matches) {
+                        calendarContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
                 }, 100);
 
                 return () => {
@@ -1497,7 +1693,7 @@
             };
 
             const handleDelete = async () => {
-                if (!confirm("정말 이 예약을 취소하시겠습니까?")) return; setLoading(true);
+                if (!(await confirm("정말 이 예약을 취소하시겠습니까?"))) return; setLoading(true);
                 try { await callApi({ action: 'DELETE', token: user.token, id: formData.id }); setLoading(false); setShowForm(false); calendarInstanceRef.current?.unselect(); setEvents(prev => prev.filter(ev => String(ev.id) !== String(formData.id))); fetchBookings(true); showToast("예약이 취소되었습니다."); }
                 catch (e) { alert(e.message || "오류 발생"); setLoading(false); }
             };
@@ -1580,7 +1776,7 @@
                             <form onSubmit={handleLogin} className="space-y-5">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">이름</label>
-                                    <input type="text" required value={loginInput.name} onChange={e => setLoginInput({ ...loginInput, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 text-sm transition" placeholder="홍길동" />
+                                    <input autoFocus type="text" required value={loginInput.name} onChange={e => setLoginInput({ ...loginInput, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 text-base sm:text-sm transition" placeholder="홍길동" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">사번</label>
@@ -1593,7 +1789,7 @@
                                             const formattedEmpNo = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
                                             setLoginInput({ ...loginInput, empNo: formattedEmpNo });
                                         }}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 text-sm transition"
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 text-base sm:text-sm transition"
                                         placeholder="사번 5자리 입력"
                                     />
                                 </div>
@@ -1603,7 +1799,7 @@
                             </form>
                         </div>
 
-                        <div className="fixed bottom-14 sm:bottom-4 right-3 sm:right-4 z-[40] text-right pointer-events-none opacity-80 select-none">
+                        <div className="absolute bottom-3 right-3 sm:right-4 z-[40] text-right pointer-events-none opacity-80 select-none">
                             <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
                                 &copy; vico.yj All rights reserved. <span className="mx-1 text-slate-300 dark:text-slate-600">|</span> codeyj@duck.com
                             </p>
@@ -1613,7 +1809,7 @@
             }
 
             return (
-                <div className="h-dvh flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200 overflow-hidden">
+                <div className="relative min-h-dvh h-auto sm:h-dvh flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200 overflow-x-hidden overflow-y-auto sm:overflow-hidden">
                     <header className="relative bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shrink-0 shadow-sm transition-colors duration-200 z-20">
                         
                         {/* 좌측: 로고 및 설명 */}
@@ -1696,7 +1892,7 @@
 
                             <div className="flex items-center space-x-1 sm:space-x-2">
                                 {user.canAdminAuth && !user.isAdmin && (
-                                    <button 
+                                    <button aria-label="새로고침"
                                         onClick={handleAdminAuth} 
                                         className="p-1.5 sm:px-3 sm:py-2 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95"
                                         title="관리자 인증"
@@ -1713,12 +1909,12 @@
                                     </span>
                                 )}
 
-                                {/* ⚡ 내 예약 (모바일에서는 하단 탭바를 사용하므로 숨김) */}
-                                <button
+                                {/* ⚡ Me (모바일에서는 하단 탭바를 사용하므로 숨김) */}
+                                <button aria-label="로그아웃"
                                     onClick={() => setShowMyBookings(true)}
                                     className="hidden sm:flex relative items-center px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition"
                                 >
-                                    내 예약
+                                    Me
                                     {myBookings.length > 0 && (
                                         <span className="ml-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-blue-600 text-white text-[10px]">
                                             {myBookings.length}
@@ -1753,7 +1949,7 @@
                         </div>
                     </header>
 
-                    <main className="flex-1 w-full p-2 sm:p-4 pb-20 sm:pb-4 min-h-0 flex flex-col relative">
+                    <main className="flex-none sm:flex-1 w-full p-2 sm:p-4 pb-20 sm:pb-4 min-h-0 flex flex-col relative">
                         
                         {/* 모바일용 상태창 */}
                         <div className="md:hidden shrink-0 mb-2 space-y-2">
@@ -1828,9 +2024,16 @@
                                 ))}
                             </div>
                         )}
+
+                        <div className="shrink-0 mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-slate-500 dark:text-slate-400" aria-label="캘린더 범례">
+                            <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span>Me</span>
+                            <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-400"></span>다른 예약</span>
+                            <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400"></span>주말·공휴일</span>
+                            <span className="ml-auto hidden sm:inline text-slate-400 dark:text-slate-500">날짜를 선택하면 예약할 수 있습니다</span>
+                        </div>
                         
                         {/* 달력 영역 */}
-                        <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-4 h-full relative transition-colors duration-200 overflow-hidden">
+                        <div className="h-[620px] sm:h-full shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-4 relative transition-colors duration-200 overflow-hidden">
                             <div ref={calendarContainerRef} id="calendar" className="w-full h-full"></div>
                         </div>
 
@@ -1853,17 +2056,17 @@
                     </main>
 
                     {showMyBookings && (
-                        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]"
+                        <div role="dialog" aria-modal="true" aria-labelledby="my-bookings-title" className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]"
                             onClick={() => setShowMyBookings(false)}
                         >
                             <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden"
                                 onClick={e => e.stopPropagation()}
                             >
                                 <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                                    <div><h3 className="font-bold text-slate-900 dark:text-white">내 예약</h3>
+                                    <div><h3 id="my-bookings-title" className="font-bold text-slate-900 dark:text-white">Me</h3>
                                         <p className="text-xs text-slate-400 mt-0.5">예정된 예약 {myBookings.length}건</p>
                                     </div>
-                                    <button
+                                    <button aria-label="Me 닫기"
                                         onClick={() => setShowMyBookings(false)}
                                         className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 text-xl"
                                     >
@@ -1921,9 +2124,9 @@
                     )}
 
                     {showListModal && (
-                        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div role="dialog" aria-modal="true" aria-labelledby="date-bookings-title" className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                             <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700">
-                                <h3 className="font-bold mb-4 text-slate-900 dark:text-white">{selectedSlot?.startDate} 예약 목록</h3>
+                                <h3 id="date-bookings-title" className="font-bold mb-4 text-slate-900 dark:text-white">{selectedSlot?.startDate} 예약 목록</h3>
                                 {selectedDateReservations.length > 0 ? (
                                     selectedDateReservations.map(ev => {
                                         const formatTime = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
@@ -1971,9 +2174,9 @@
                     )}
 
                     {showNotice && (
-                        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div role="dialog" aria-modal="true" aria-labelledby="notice-title" className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                             <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl p-6 border border-slate-100 dark:border-slate-700">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">법인카드 대여 사전 유의사항</h3>
+                                <h3 id="notice-title" className="text-lg font-bold text-slate-900 dark:text-white mb-4">법인카드 대여 사전 유의사항</h3>
                                 <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6 space-y-3">
                                     <p>
                                         • 법인카드 결제 영수증은 A4 용지에 부착하여 제출 부탁드립니다.<br />
@@ -1999,11 +2202,11 @@
                     )}
 
                     {showForm && selectedSlot && (
-                        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
-                            <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl p-5 sm:p-6 border border-slate-100 dark:border-slate-700 my-10 relative">
+                        <div role="dialog" aria-modal="true" aria-labelledby="booking-form-title" className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl p-5 sm:p-6 border border-slate-100 dark:border-slate-700 my-4 relative">
                                 <div className="flex justify-between items-center mb-5">
-                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">{formData.id ? "예약 상세 정보" : "신규 법인카드 예약 신청"}</h3>
-                                    <button type="button" onClick={() => {
+                                    <h3 id="booking-form-title" className="text-lg font-bold text-slate-900 dark:text-white">{formData.id ? "예약 상세 정보" : "신규 법인카드 예약 신청"}</h3>
+                                    <button type="button" aria-label="예약 창 닫기" onClick={() => {
                                         setShowForm(false);
                                         calendarInstanceRef.current?.unselect();
                                     }} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-xl transition-colors">&times;</button>
@@ -2013,7 +2216,7 @@
                                     {/* 부서 선택 (Datalist 지원) */}
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여 부서</label>
-                                        <select disabled={!hasPermission} value={deptSelect} onChange={e => setDeptSelect(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors">
+                                        <select autoFocus={!formData.id} disabled={!hasPermission} value={deptSelect} onChange={e => setDeptSelect(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors">
                                             <option value="선택" disabled>선택</option>
                                             {DEPARTMENTS.map(dept => (
                                                 <option key={dept} value={dept}>{dept}</option>
@@ -2071,21 +2274,21 @@
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full overflow-hidden">
                                         <div>
                                             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">대여 시작일 및 시간</label>
-                                            <div className="flex space-x-2">
+                                            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,7rem)] gap-2">
                                                 <input
                                                     type="date"
                                                     disabled={!hasPermission}
                                                     required
                                                     value={formData.startDate}
                                                     onChange={e => handleStartDateChange(e.target.value)}
-                                                    className="w-3/5 min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+                                                    className="w-full min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
                                                 />
                                                 <select
                                                     disabled={!hasPermission}
                                                     required
                                                     value={formData.startTimePart}
                                                     onChange={e => handleStartTimeChange(e.target.value)}
-                                                    className="w-2/5 min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+                                                    className="w-full min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
                                                 >
                                                     <option value="" disabled>선택</option>
                                                     {TIME_OPTIONS.map(time => <option key={`start-${time}`} value={time}>{time}</option>)}
@@ -2095,21 +2298,21 @@
 
                                         <div>
                                             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">반납 예정일 및 시간</label>
-                                            <div className="flex space-x-2">
+                                            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,7rem)] gap-2">
                                                 <input
                                                     type="date"
                                                     disabled={!hasPermission}
                                                     required
                                                     value={formData.endDate}
                                                     onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                                                    className="w-3/5 min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+                                                    className="w-full min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
                                                 />
                                                 <select
                                                     disabled={!hasPermission}
                                                     required
                                                     value={formData.endTimePart}
                                                     onChange={e => setFormData({ ...formData, endTimePart: e.target.value })}
-                                                    className="w-2/5 min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 transition-colors"
+                                                    className="w-full min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 transition-colors"
                                                 >
                                                     <option value="" disabled>선택</option>
                                                     {TIME_OPTIONS.map(time => <option key={`end-${time}`} value={time}>{time}</option>)}
@@ -2221,9 +2424,9 @@
 
                     {showInstruction && (
                         <div 
-                            className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]" onClick={() => setShowInstruction(false)}>
+                            role="dialog" aria-modal="true" aria-labelledby="instruction-title" className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]" onClick={() => setShowInstruction(false)}>
                             <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl p-6 border border-slate-100 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">법인카드 예약 시스템 이용 안내</h3>
+                                <h3 id="instruction-title" className="text-lg font-bold text-slate-900 dark:text-white mb-4">법인카드 예약 시스템 이용 안내</h3>
                                 <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6 space-y-4 max-h-[60vh] overflow-y-auto">
                                     <div>
                                         <p className="font-bold text-blue-600 dark:text-blue-400 mb-1">[예약 및 이용]</p>
@@ -2253,7 +2456,42 @@
                         </div>
                     )}
 
-                    {toast && (<div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[99999]">
+                    {feedbackDialog && (
+                        <div role="dialog" aria-modal="true" aria-labelledby="feedback-dialog-title" className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm flex items-center justify-center p-4 z-[10000]">
+                            <form
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    closeFeedbackDialog(feedbackDialog.kind === 'prompt' ? feedbackDialog.value : true);
+                                }}
+                                className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl p-5"
+                            >
+                                <h3 id="feedback-dialog-title" className="text-base font-bold text-slate-900 dark:text-white">안내</h3>
+                                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300 whitespace-pre-line">{feedbackDialog.message}</p>
+                                {feedbackDialog.kind === 'prompt' && (
+                                    <input
+                                        autoFocus
+                                        type="password"
+                                        value={feedbackDialog.value}
+                                        onChange={(event) => setFeedbackDialog(prev => ({ ...prev, value: event.target.value }))}
+                                        className="mt-4 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="PIN 입력"
+                                    />
+                                )}
+                                <div className="mt-5 flex gap-2 justify-end">
+                                    {(feedbackDialog.kind === 'confirm' || feedbackDialog.kind === 'prompt') && (
+                                        <button type="button" onClick={() => closeFeedbackDialog(feedbackDialog.kind === 'prompt' ? null : false)} className="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                                            취소
+                                        </button>
+                                    )}
+                                    <button type="submit" autoFocus={feedbackDialog.kind !== 'prompt'} className="flex-1 px-4 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold transition">
+                                        {feedbackDialog.kind === 'confirm' ? '확인' : feedbackDialog.kind === 'prompt' ? '인증하기' : '확인'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {toast && (<div role="status" aria-live="polite" className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[99999]">
                             <div className={`flex items-center gap-2 px-4 py-3 rounded-xl shadow-xl border text-sm font-semibold ${ toast.type === 'error'
                                         ? 'bg-red-600 border-red-500 text-white'
                                         : toast.type === 'warning'
@@ -2279,7 +2517,7 @@
                     {/* 모바일 하단 네비게이션 (Safe-Area 대응) */}
                     <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                         <div className="grid grid-cols-3 gap-1">
-                            <button
+                            <button aria-label="달력 보기"
                                 onClick={() => {
                                     if (!calendarInstanceRef.current) return;
                                     calendarInstanceRef.current.changeView('dayGridMonth');
@@ -2301,7 +2539,7 @@
                                 </span>
                             </button>
                     
-                            <button
+                            <button aria-label="오늘 보기"
                                 onClick={() => {
                                     if (!calendarInstanceRef.current) return;
                                     calendarInstanceRef.current.today();
@@ -2317,7 +2555,7 @@
                                 </span>
                             </button>
                     
-                            <button
+                            <button aria-label="Me 예약 보기"
                                 onClick={() => setShowMyBookings(true)}
                                 className="relative flex flex-col items-center justify-center gap-1 py-1 text-slate-500 dark:text-slate-300"
                             >
@@ -2339,12 +2577,12 @@
                                     </span>
                                 )}
                                 <span className="text-[10px] font-medium">
-                                    내 예약
+                                    Me
                                 </span>
                             </button>
                         </div>
                     </div>
-                    <div className="fixed bottom-14 sm:bottom-4 right-3 sm:right-4 z-[40] text-right pointer-events-none opacity-80 select-none">
+                    <div className="absolute bottom-14 sm:bottom-3 right-3 sm:right-4 z-[40] text-right pointer-events-none opacity-80 select-none">
                         <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
                             &copy; vico.yj All rights reserved. <span className="mx-1 text-slate-300 dark:text-slate-600">|</span> codeyj@duck.com
                         </p>
