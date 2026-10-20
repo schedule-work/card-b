@@ -1899,11 +1899,16 @@ function App() {
       select: function (info) {
         const calendar = info.view.calendar;
         const currentSelectedStr = info.startStr;
-        if (lastSelectedRef.current !== currentSelectedStr) {
-          lastSelectedRef.current = currentSelectedStr;
-          return;
+        const isMobile = window.innerWidth < 640;
+        // ⚡ 모바일에서는 "한 번 탭 = 선택, 두 번째 탭 = 확정" 방식(데스크톱 예약 폼 전용 동작) 대신
+        // 한 번 탭으로 바로 해당 날짜의 예약 내역이 뜨도록 즉시 처리합니다.
+        if (!isMobile) {
+          if (lastSelectedRef.current !== currentSelectedStr) {
+            lastSelectedRef.current = currentSelectedStr;
+            return;
+          }
+          lastSelectedRef.current = null;
         }
-        lastSelectedRef.current = null;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const maxSelectDate = new Date();
