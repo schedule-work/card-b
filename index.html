@@ -1837,8 +1837,6 @@ function App() {
       handleWindowResize: true,
       locale: 'ko',
       selectable: true,
-      selectLongPressDelay: 0,
-      touchLongPressDelay: 0,
       allDaySlot: false,
       slotMinTime: '08:30:00',
       slotMaxTime: '17:30:00',
@@ -2029,18 +2027,35 @@ function App() {
       }
     };
   }, [user]);
-  // ⚡ 모바일 달력 접힘/펼침 애니메이션 중 FullCalendar가 새 높이에 맞게 다시 그려지도록 보정
+  // ⚡ 모바일 달력 접힘/펼침 시 FullCalendar가 새 높이에 맞게 다시 그려지도록 보정
+  // 목록이 열려 달력이 절반으로 줄어들면: 6주를 억지로 압축하지 않고(expandRows:false) 각 주가 터치하기 충분한 높이를 유지한 채 스크롤되도록 하고,
+  // 선택한 날짜가 보이는 영역 중앙에 오도록 스크롤한다. 목록을 닫으면 다시 전체 달력이 화면을 꽉 채우도록 expandRows:true로 복원.
   React.useEffect(() => {
     const calendar = calendarInstanceRef.current;
     if (!calendar) return;
+    calendar.setOption('expandRows', !showListModal);
     calendar.updateSize();
-    const t1 = setTimeout(() => calendar.updateSize(), 80);
-    const t2 = setTimeout(() => calendar.updateSize(), 220);
+    const centerSelectedDate = () => {
+      if (!showListModal || !selectedSlot?.startDate || !calendarContainerRef.current) return;
+      const cell = calendarContainerRef.current.querySelector(`[data-date="${selectedSlot.startDate}"]`);
+      if (cell) cell.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    };
+    const t1 = setTimeout(() => {
+      calendar.updateSize();
+      centerSelectedDate();
+    }, 80);
+    const t2 = setTimeout(() => {
+      calendar.updateSize();
+      centerSelectedDate();
+    }, 240);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [showListModal]);
+  }, [showListModal, selectedSlot?.startDate]);
   React.useEffect(() => {
     if (!calendarInstanceRef.current) return;
     let visibleEvents = events;
