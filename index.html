@@ -486,6 +486,22 @@
                 width: 8% !important;
                 min-width: 28px;
             }
+
+            /* ⚡ 모바일 좁은 칸에서도 '예약불가'/공휴일 텍스트가 잘리지 않도록 글자를 더 작게 축소 */
+            .fc-holiday-name {
+                font-size: 7.5px !important;
+                letter-spacing: -0.04em !important;
+            }
+
+            .fc-day-num {
+                min-width: 15px !important;
+                height: 15px !important;
+                font-size: 0.62rem !important;
+            }
+
+            .fc-daynum-row {
+                gap: 2px !important;
+            }
         }
 
         /* 다크모드 캘린더 전용 스타일 */
@@ -1302,6 +1318,23 @@ function App() {
   const calendarContainerRef = React.useRef(null);
   const calendarInstanceRef = React.useRef(null);
   const lastSelectedRef = React.useRef(null);
+  const preCollapseDateRef = React.useRef(null);
+  // ⚡ 모바일: 날짜 선택 시 달력을 주간 보기로 접어 하단 예약 목록이 바로 눈에 띄도록 함
+  const collapseCalendarToWeek = dateStr => {
+    const calendar = calendarInstanceRef.current;
+    if (!calendar) return;
+    if (calendar.view.type !== 'dayGridWeek') {
+      preCollapseDateRef.current = calendar.getDate();
+    }
+    calendar.changeView('dayGridWeek', dateStr);
+  };
+  const expandCalendarToMonth = () => {
+    const calendar = calendarInstanceRef.current;
+    if (!calendar) return;
+    if (calendar.view.type === 'dayGridWeek') {
+      calendar.changeView('dayGridMonth', preCollapseDateRef.current || calendar.getDate());
+    }
+  };
   const eventsRef = React.useRef(events);
   const lastFetchedTokenRef = React.useRef('__initial__');
   const [showNotice, setShowNotice] = React.useState(false);
@@ -1369,6 +1402,7 @@ function App() {
       if (event.key !== 'Escape') return;
       setShowMyBookings(false);
       setShowListModal(false);
+      expandCalendarToMonth();
       setShowNotice(false);
       setShowForm(false);
       setShowInstruction(false);
@@ -1513,6 +1547,7 @@ function App() {
         endDate: toDateStr(endObj)
       });
       setShowListModal(false);
+      expandCalendarToMonth();
       setShowMyBookings(false);
       setShowForm(true);
     } catch (e) {
@@ -1720,18 +1755,19 @@ function App() {
       }
     }
     let leftTag = null;
-    if (holidayName && arg.view.type === 'dayGridMonth') {
+    const isDayGridView = arg.view.type === 'dayGridMonth' || arg.view.type === 'dayGridWeek';
+    if (holidayName && isDayGridView) {
       const isUnavailable = holidayName === UNAVAILABLE_PERIOD_LABEL;
       const displayHolidayName = isUnavailable ? UNAVAILABLE_PERIOD_SHORT_LABEL : holidayName;
       const safeHolidayName = escapeHtml(displayHolidayName);
       const tagColor = isUnavailable ? '#64748b' : '#ef4444';
-      leftTag = `<span class="fc-holiday-name" style="font-size: 11px; font-weight: 600; color: ${tagColor}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1; line-height: 1; letter-spacing: -0.02em;" title="${escapeHtml(holidayName)}">${safeHolidayName}</span>`;
-    } else if (isToday && arg.view.type === 'dayGridMonth') {
+      leftTag = `<span class="fc-holiday-name" style="font-size: 11px; font-weight: 600; color: ${tagColor}; white-space: nowrap; flex-shrink: 1; line-height: 1; letter-spacing: -0.02em;" title="${escapeHtml(holidayName)}">${safeHolidayName}</span>`;
+    } else if (isToday && isDayGridView) {
       leftTag = `<span class="fc-today-badge" style="font-size: 10px; font-weight: 800; color: #2563eb; background-color: rgba(37,99,235,0.12); padding: 1px 4px; border-radius: 3px; white-space: nowrap; line-height: 1.1;">오늘</span>`;
     }
     if (leftTag) {
       return {
-        html: `<div style="display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; min-width: 0 !important; gap: 4px !important; white-space: nowrap !important;">
+        html: `<div class="fc-daynum-row" style="display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; min-width: 0 !important; gap: 4px !important; white-space: nowrap !important;">
                             ${leftTag}
                             <span class="fc-day-num" style="flex-shrink: 0; ${numColor}">${dayNumber}</span>
                         </div>`
@@ -1897,10 +1933,11 @@ function App() {
           }));
           setSelectedDateReservations(dayEvents);
           setShowListModal(true);
+          collapseCalendarToWeek(sDate);
         } else {
           setSelectedEvent(null);
-          if (user.isAdmin) {
-            // ⚡ 관리자는 법인카드 대여 사전 유의사항 안내 없이 바로 예약 폼으로 이동
+          if (user.canAdminAuth) {
+            // ⚡ 관리자 계정으로 로그인한 경우(추가 PIN 인증 전이라도) 법인카드 대여 사전 유의사항 안내를 건너뛰고 바로 예약 폼으로 이동
             setDeptSelect('선택');
             setDeptCustom('');
             setBudgetSelect('간호부');
@@ -1950,6 +1987,7 @@ function App() {
           }));
           setSelectedDateReservations(dayEvents);
           setShowListModal(true);
+          collapseCalendarToWeek(sDate);
         } else {
           openBookingById(info.event.id, info.event.start, info.event.end);
         }
@@ -1974,6 +2012,18 @@ function App() {
       }
     };
   }, [user]);
+  // ⚡ 모바일 달력 접힘/펼침 애니메이션 중 FullCalendar가 새 높이에 맞게 다시 그려지도록 보정
+  React.useEffect(() => {
+    const calendar = calendarInstanceRef.current;
+    if (!calendar) return;
+    calendar.updateSize();
+    const t1 = setTimeout(() => calendar.updateSize(), 80);
+    const t2 = setTimeout(() => calendar.updateSize(), 220);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [showListModal]);
   React.useEffect(() => {
     if (!calendarInstanceRef.current) return;
     let visibleEvents = events;
@@ -2577,7 +2627,7 @@ function App() {
   }), "\uC8FC\uB9D0\xB7\uACF5\uD734\uC77C"), /*#__PURE__*/React.createElement("span", {
     className: "ml-auto hidden sm:inline text-slate-400 dark:text-slate-500"
   }, "\uB0A0\uC9DC\uB97C \uC120\uD0DD\uD558\uBA74 \uC608\uC57D\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4")), /*#__PURE__*/React.createElement("div", {
-    className: "h-[620px] sm:h-full shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-4 relative transition-colors duration-200 overflow-hidden"
+    className: `${showListModal ? 'h-[250px]' : 'h-[620px]'} sm:h-full shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-4 relative transition-[height,background-color,border-color] duration-200 ease-out overflow-hidden`
   }, /*#__PURE__*/React.createElement("div", {
     ref: calendarContainerRef,
     id: "calendar",
@@ -2609,6 +2659,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setShowListModal(false);
+      expandCalendarToMonth();
       calendarInstanceRef.current?.unselect();
     },
     className: "flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 py-3 rounded-xl font-medium transition text-sm"
@@ -2616,7 +2667,12 @@ function App() {
     onClick: () => {
       setSelectedEvent(null);
       setShowListModal(false);
-      setShowNotice(true);
+      expandCalendarToMonth();
+      if (user.canAdminAuth) {
+        confirmNotice();
+      } else {
+        setShowNotice(true);
+      }
     },
     className: "flex-[2] bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl shadow-md font-medium transition text-sm"
   }, "+ 신규 예약"))), loading && /*#__PURE__*/React.createElement("div", {
