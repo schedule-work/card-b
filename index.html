@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>DNS > Card-Portal</title>
 
     <!-- ⚡ 성능 최적화를 위한 CDN Preconnect -->
@@ -359,6 +359,17 @@
 
         .fc-day-sat .fc-day-num {
             color: #2563eb !important;
+        }
+
+        /* ⚡ 예약 불가 기간으로 지정된 날짜 셀에 은은한 회색 음영 적용 */
+        .unavailable-day {
+            background-color: rgba(100, 116, 139, 0.08) !important;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .unavailable-day {
+                background-color: rgba(148, 163, 184, 0.1) !important;
+            }
         }
 
         .fc-highlight {
@@ -820,6 +831,7 @@
 function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwp5HHDFNuWuwkgfEh0HHmexwwHfaakqUWTe4Z89MrxyIwiXf5QQLoxLwe_096-NRr2zw/exec";
 const UNAVAILABLE_PERIOD_LABEL = "예약 불가 기간";
+const UNAVAILABLE_PERIOD_SHORT_LABEL = "예약불가";
 const NOTICE_SEVERITY_OPTIONS = [{
   key: 'info',
   label: '안내',
@@ -1279,6 +1291,11 @@ function App() {
     if (dateObj.getMonth() === 6 && dateObj.getDate() === 17) return "제헌절";
     return FALLBACK_HOLIDAYS[dateStr] || null;
   };
+  const getDayCellClasses = dateObj => {
+    const holidayName = getHolidayName(dateObj);
+    if (!holidayName) return [];
+    return holidayName === UNAVAILABLE_PERIOD_LABEL ? ['unavailable-day'] : ['holiday-day'];
+  };
   const [loading, setLoading] = React.useState(false);
   const [showListModal, setShowListModal] = React.useState(false);
   const [selectedDateReservations, setSelectedDateReservations] = React.useState([]);
@@ -1704,8 +1721,11 @@ function App() {
     }
     let leftTag = null;
     if (holidayName && arg.view.type === 'dayGridMonth') {
-      const safeHolidayName = escapeHtml(holidayName);
-      leftTag = `<span class="fc-holiday-name" style="font-size: 11px; font-weight: 600; color: #ef4444; white-space: nowrap; line-height: 1; letter-spacing: -0.02em;" title="${safeHolidayName}">${safeHolidayName}</span>`;
+      const isUnavailable = holidayName === UNAVAILABLE_PERIOD_LABEL;
+      const displayHolidayName = isUnavailable ? UNAVAILABLE_PERIOD_SHORT_LABEL : holidayName;
+      const safeHolidayName = escapeHtml(displayHolidayName);
+      const tagColor = isUnavailable ? '#64748b' : '#ef4444';
+      leftTag = `<span class="fc-holiday-name" style="font-size: 11px; font-weight: 600; color: ${tagColor}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1; line-height: 1; letter-spacing: -0.02em;" title="${escapeHtml(holidayName)}">${safeHolidayName}</span>`;
     } else if (isToday && arg.view.type === 'dayGridMonth') {
       leftTag = `<span class="fc-today-badge" style="font-size: 10px; font-weight: 800; color: #2563eb; background-color: rgba(37,99,235,0.12); padding: 1px 4px; border-radius: 3px; white-space: nowrap; line-height: 1.1;">오늘</span>`;
     }
@@ -1713,7 +1733,7 @@ function App() {
       return {
         html: `<div style="display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; min-width: 0 !important; gap: 4px !important; white-space: nowrap !important;">
                             ${leftTag}
-                            <span class="fc-day-num" style="${numColor}">${dayNumber}</span>
+                            <span class="fc-day-num" style="flex-shrink: 0; ${numColor}">${dayNumber}</span>
                         </div>`
       };
     }
@@ -1788,8 +1808,7 @@ function App() {
         day: 'Day'
       },
       dayCellClassNames: function (arg) {
-        if (getHolidayName(arg.date)) return ['holiday-day'];
-        return [];
+        return getDayCellClasses(arg.date);
       },
       dayCellContent: renderDayCellContent,
       eventContent: function (arg) {
@@ -1880,7 +1899,31 @@ function App() {
           setShowListModal(true);
         } else {
           setSelectedEvent(null);
-          setShowNotice(true);
+          if (user.isAdmin) {
+            // ⚡ 관리자는 법인카드 대여 사전 유의사항 안내 없이 바로 예약 폼으로 이동
+            setDeptSelect('선택');
+            setDeptCustom('');
+            setBudgetSelect('간호부');
+            setBudgetCustom('');
+            setPhone1Select('010');
+            setPhone1Custom('');
+            setPhone2('');
+            setPhone3('');
+            setFormData({
+              id: '',
+              name: user.name,
+              empNo: user.empNo,
+              startDate: sDate,
+              startTimePart: '09:00',
+              endDate: eDate,
+              endTimePart: '12:00',
+              purpose: '',
+              details: ''
+            });
+            setShowForm(true);
+          } else {
+            setShowNotice(true);
+          }
         }
         calendarInstanceRef.current.unselect();
       },
@@ -1949,10 +1992,7 @@ function App() {
   React.useEffect(() => {
     if (calendarInstanceRef.current) {
       calendarInstanceRef.current.setOption('dayCellClassNames', function (arg) {
-        if (getHolidayName(arg.date)) {
-          return ['holiday-day'];
-        }
-        return [];
+        return getDayCellClasses(arg.date);
       });
       calendarInstanceRef.current.setOption('dayCellContent', renderDayCellContent);
       calendarInstanceRef.current.render();
@@ -2542,7 +2582,44 @@ function App() {
     ref: calendarContainerRef,
     id: "calendar",
     className: "w-full h-full"
-  })), loading && /*#__PURE__*/React.createElement("div", {
+  })), showListModal && /*#__PURE__*/React.createElement("div", {
+    className: "sm:hidden mt-3 shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "font-bold mb-3 text-slate-900 dark:text-white text-sm"
+  }, selectedSlot?.startDate, " 예약 목록"), selectedDateReservations.length > 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "max-h-[40vh] overflow-y-auto -mx-1"
+  }, selectedDateReservations.map(ev => {
+    const formatTime = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const formatDate = d => String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
+    const isSameDay = ev.startObj.toDateString() === ev.endObj.toDateString();
+    const timeDisplay = isSameDay ? `${formatTime(ev.startObj)} ~ ${formatTime(ev.endObj)}` : `${formatDate(ev.startObj)} ${formatTime(ev.startObj)} ~ ${formatDate(ev.endObj)} ${formatTime(ev.endObj)}`;
+    return /*#__PURE__*/React.createElement("div", {
+      key: ev.id,
+      onClick: () => openBookingById(ev.id, ev.startObj, ev.endObj),
+      className: "px-1 py-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm flex flex-col gap-1 transition-colors"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-semibold text-blue-700 dark:text-blue-400"
+    }, ev.title), /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-500 dark:text-slate-400 text-xs"
+    }, timeDisplay));
+  })) : /*#__PURE__*/React.createElement("p", {
+    className: "text-slate-500 dark:text-slate-400 text-sm text-center py-4"
+  }, "예약된 내역이 없습니다."), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 mt-4"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setShowListModal(false);
+      calendarInstanceRef.current?.unselect();
+    },
+    className: "flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 py-3 rounded-xl font-medium transition text-sm"
+  }, "Back"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setSelectedEvent(null);
+      setShowListModal(false);
+      setShowNotice(true);
+    },
+    className: "flex-[2] bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl shadow-md font-medium transition text-sm"
+  }, "+ 신규 예약"))), loading && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 bg-black/30 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white/95 dark:bg-slate-800/95 px-8 py-6 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col items-center gap-3 select-none"
@@ -2616,48 +2693,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowMyBookings(false),
     className: "w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-sm font-medium text-slate-600 dark:text-slate-200"
-  }, "\uB2EB\uAE30")))), showListModal && /*#__PURE__*/React.createElement("div", {
-    role: "dialog",
-    "aria-modal": "true",
-    "aria-labelledby": "date-bookings-title",
-    className: "fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700"
-  }, /*#__PURE__*/React.createElement("h3", {
-    id: "date-bookings-title",
-    className: "font-bold mb-4 text-slate-900 dark:text-white"
-  }, selectedSlot?.startDate, " \uC608\uC57D \uBAA9\uB85D"), selectedDateReservations.length > 0 ? selectedDateReservations.map(ev => {
-    const formatTime = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    const formatDate = d => String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
-    const isSameDay = ev.startObj.toDateString() === ev.endObj.toDateString();
-    const timeDisplay = isSameDay ? `${formatTime(ev.startObj)} ~ ${formatTime(ev.endObj)}` : `${formatDate(ev.startObj)} ${formatTime(ev.startObj)} ~ ${formatDate(ev.endObj)} ${formatTime(ev.endObj)}`;
-    return /*#__PURE__*/React.createElement("div", {
-      key: ev.id,
-      onClick: () => openBookingById(ev.id, ev.startObj, ev.endObj),
-      className: "p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm flex flex-col gap-1 transition-colors"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "font-semibold text-blue-700 dark:text-blue-400"
-    }, ev.title), /*#__PURE__*/React.createElement("span", {
-      className: "text-slate-500 dark:text-slate-400 text-xs"
-    }, timeDisplay));
-  }) : /*#__PURE__*/React.createElement("p", {
-    className: "text-slate-500 dark:text-slate-400 text-sm text-center py-4"
-  }, "\uC608\uC57D\uB41C \uB0B4\uC5ED\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."), /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-2 mt-4"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setShowListModal(false);
-      calendarInstanceRef.current?.unselect();
-    },
-    className: "flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 py-3 rounded-xl font-medium transition text-sm"
-  }, "Back"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setSelectedEvent(null);
-      setShowListModal(false);
-      setShowNotice(true);
-    },
-    className: "flex-[2] bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl shadow-md font-medium transition text-sm"
-  }, "+ \uC2E0\uADDC \uC608\uC57D")))), showNotice && /*#__PURE__*/React.createElement("div", {
+  }, "\uB2EB\uAE30")))), showNotice && /*#__PURE__*/React.createElement("div", {
     role: "dialog",
     "aria-modal": "true",
     "aria-labelledby": "notice-title",
@@ -2804,20 +2840,20 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1"
   }, "\uB300\uC5EC \uC2DC\uC791\uC77C \uBC0F \uC2DC\uAC04"), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-[minmax(0,1fr)_minmax(0,7rem)] gap-2"
+    className: "grid grid-cols-[minmax(8rem,1fr)_minmax(0,4.5rem)] gap-1.5"
   }, /*#__PURE__*/React.createElement("input", {
     type: "date",
     disabled: !hasPermission,
     required: true,
     value: formData.startDate,
     onChange: e => handleStartDateChange(e.target.value),
-    className: "w-full min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+    className: "w-full min-w-0 px-1.5 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-[13px] sm:text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
   }), /*#__PURE__*/React.createElement("select", {
     disabled: !hasPermission,
     required: true,
     value: formData.startTimePart,
     onChange: e => handleStartTimeChange(e.target.value),
-    className: "w-full min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+    className: "w-full min-w-0 px-1 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-[13px] sm:text-sm text-center focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
   }, /*#__PURE__*/React.createElement("option", {
     value: "",
     disabled: true
@@ -2827,7 +2863,7 @@ function App() {
   }, time))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1"
   }, "\uBC18\uB0A9 \uC608\uC815\uC77C \uBC0F \uC2DC\uAC04"), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-[minmax(0,1fr)_minmax(0,7rem)] gap-2"
+    className: "grid grid-cols-[minmax(8rem,1fr)_minmax(0,4.5rem)] gap-1.5"
   }, /*#__PURE__*/React.createElement("input", {
     type: "date",
     disabled: !hasPermission,
@@ -2837,7 +2873,7 @@ function App() {
       ...formData,
       endDate: e.target.value
     }),
-    className: "w-full min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+    className: "w-full min-w-0 px-1.5 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-[13px] sm:text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
   }), /*#__PURE__*/React.createElement("select", {
     disabled: !hasPermission,
     required: true,
@@ -2846,7 +2882,7 @@ function App() {
       ...formData,
       endTimePart: e.target.value
     }),
-    className: "w-full min-w-0 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 transition-colors"
+    className: "w-full min-w-0 px-1 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-[13px] sm:text-sm text-center focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 transition-colors"
   }, /*#__PURE__*/React.createElement("option", {
     value: "",
     disabled: true
