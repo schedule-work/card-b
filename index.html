@@ -378,6 +378,15 @@
             border-radius: 6px;
         }
 
+        /* ⚡ 모바일에서 날짜를 탭해 하단에 예약 목록이 뜬 동안, 어떤 날짜를 선택했는지 계속 보이도록 하는 표시 */
+        .selected-date-cell {
+            background-color: rgba(59, 130, 246, 0.14) !important;
+            box-shadow: inset 0 0 0 2px #2563eb !important;
+            border-radius: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
         /* 모던 이벤트 카드 애니메이션 */
         .fc-event {
             margin: 1.5px 2px !important;
@@ -1337,6 +1346,10 @@ function App() {
   const lastSelectedRef = React.useRef(null);
   const eventsRef = React.useRef(events);
   const lastFetchedTokenRef = React.useRef('__initial__');
+  // ⚡ 캘린더 인스턴스는 로그인 시 1회만 생성하고(관리자 PIN 인증 등으로 user 객체가 이후 또 바뀌어도
+  // 재생성하지 않음), select/eventClick 콜백 안에서는 항상 최신 user 값을 보도록 ref로 참조한다.
+  const userRef = React.useRef(user);
+  userRef.current = user;
   const [showNotice, setShowNotice] = React.useState(false);
   const [showForm, setShowForm] = React.useState(false);
   const [showInstruction, setShowInstruction] = React.useState(() => {
@@ -1814,6 +1827,26 @@ function App() {
     const m = targetMin % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
   };
+  // ⚡ 캘린더 인스턴스(재)생성 직후와 events/budgetFilter 변경 시 공통으로 호출되는 동기화 함수.
+  // 로그인 직후 캘린더가 막 생성된 시점에도 이미 불러와 둔 예약 데이터를 즉시 반영해
+  // "로그인하자마자 날짜를 눌러도 예약 내역이 비어 보이는" 공백을 없앤다.
+  const syncCalendarEvents = () => {
+    if (!calendarInstanceRef.current) return;
+    let visibleEvents = events;
+    if (budgetFilter !== '전체') {
+      visibleEvents = events.filter(ev => {
+        const budget = ev.extendedProps?.budget || '';
+        if (budgetFilter === '기타') {
+          return !['간호부', 'QI(적정진료관리팀)', '총무팀', '학생실습비'].includes(budget);
+        }
+        return budget === budgetFilter;
+      });
+    }
+    eventsRef.current = visibleEvents;
+    calendarInstanceRef.current.removeAllEvents();
+    calendarInstanceRef.current.addEventSource(visibleEvents);
+    calendarInstanceRef.current.render();
+  };
   React.useEffect(() => {
     if (!user) return;
     if (!calendarContainerRef.current) return;
@@ -1914,7 +1947,7 @@ function App() {
         const maxSelectDate = new Date();
         maxSelectDate.setMonth(maxSelectDate.getMonth() + 2);
         const selectStart = new Date(info.startStr + "T00:00:00");
-        if (!user.isAdmin) {
+        if (!userRef.current.isAdmin) {
           if (selectStart < today) {
             alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
             calendarInstanceRef.current.unselect();
@@ -1957,7 +1990,7 @@ function App() {
           setShowListModal(true);
         } else {
           setSelectedEvent(null);
-          if (user.canAdminAuth) {
+          if (userRef.current.canAdminAuth) {
             // ⚡ 관리자 계정으로 로그인한 경우(추가 PIN 인증 전이라도) 법인카드 대여 사전 유의사항 안내를 건너뛰고 바로 예약 폼으로 이동
             setDeptSelect('선택');
             setDeptCustom('');
@@ -1969,8 +2002,8 @@ function App() {
             setPhone3('');
             setFormData({
               id: '',
-              name: user.name,
-              empNo: user.empNo,
+              name: userRef.current.name,
+              empNo: userRef.current.empNo,
               startDate: sDate,
               startTimePart: '09:00',
               endDate: eDate,
@@ -2015,6 +2048,7 @@ function App() {
     });
     calendar.render();
     calendarInstanceRef.current = calendar;
+    syncCalendarEvents();
     calendar.today();
     setTimeout(() => {
       calendar.updateSize();
@@ -2031,7 +2065,11 @@ function App() {
         calendarInstanceRef.current = null;
       }
     };
-  }, [user]);
+    // ⚡ user 객체는 관리자 PIN 인증 등으로 로그인 이후에도 여러 번 바뀔 수 있는데, 그때마다 캘린더를
+    // 통째로 destroy/재생성하면 이벤트가 다시 채워지기 전까지 "방금 로그인 후 바로 탭하면 예약 내역이
+    // 비어 보이는" 공백이 생긴다. 로그인 여부(!!user)가 실제로 바뀔 때만 재생성하고, 콜백 내부에서는
+    // userRef로 최신 user 값을 읽는다.
+  }, [!!user]);
   // ⚡ 모바일 달력 접힘/펼침 시 FullCalendar가 새 높이에 맞게 다시 그려지도록 보정
   // 목록이 열려 달력이 절반으로 줄어들면: 6주를 억지로 압축하지 않고(expandRows:false) 각 주가 터치하기 충분한 높이를 유지한 채 스크롤되도록 하고,
   // 선택한 날짜가 보이는 영역 중앙에 오도록 스크롤한다. 목록을 닫으면 다시 전체 달력이 화면을 꽉 채우도록 expandRows:true로 복원.
@@ -2040,6 +2078,14 @@ function App() {
     if (!calendar) return;
     calendar.setOption('expandRows', !showListModal);
     calendar.updateSize();
+    // ⚡ 어떤 날짜를 탭해서 목록이 떴는지 눈에 보이도록, 해당 날짜 셀에 파란 선택 표시를 남긴다.
+    const highlightSelectedDate = () => {
+      if (!calendarContainerRef.current) return;
+      calendarContainerRef.current.querySelectorAll('.selected-date-cell').forEach(el => el.classList.remove('selected-date-cell'));
+      if (!showListModal || !selectedSlot?.startDate) return;
+      const cell = calendarContainerRef.current.querySelector(`[data-date="${selectedSlot.startDate}"]`);
+      if (cell) cell.classList.add('selected-date-cell');
+    };
     const centerSelectedDate = () => {
       if (!showListModal || !selectedSlot?.startDate || !calendarContainerRef.current) return;
       const cell = calendarContainerRef.current.querySelector(`[data-date="${selectedSlot.startDate}"]`);
@@ -2048,13 +2094,16 @@ function App() {
         block: 'center'
       });
     };
+    highlightSelectedDate();
     const t1 = setTimeout(() => {
       calendar.updateSize();
       centerSelectedDate();
+      highlightSelectedDate();
     }, 80);
     const t2 = setTimeout(() => {
       calendar.updateSize();
       centerSelectedDate();
+      highlightSelectedDate();
     }, 240);
     return () => {
       clearTimeout(t1);
@@ -2062,21 +2111,7 @@ function App() {
     };
   }, [showListModal, selectedSlot?.startDate]);
   React.useEffect(() => {
-    if (!calendarInstanceRef.current) return;
-    let visibleEvents = events;
-    if (budgetFilter !== '전체') {
-      visibleEvents = events.filter(ev => {
-        const budget = ev.extendedProps?.budget || '';
-        if (budgetFilter === '기타') {
-          return !['간호부', 'QI(적정진료관리팀)', '총무팀', '학생실습비'].includes(budget);
-        }
-        return budget === budgetFilter;
-      });
-    }
-    eventsRef.current = visibleEvents;
-    calendarInstanceRef.current.removeAllEvents();
-    calendarInstanceRef.current.addEventSource(visibleEvents);
-    calendarInstanceRef.current.render();
+    syncCalendarEvents();
   }, [events, budgetFilter]);
   React.useEffect(() => {
     if (calendarInstanceRef.current) {
