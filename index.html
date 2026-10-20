@@ -1870,6 +1870,9 @@ function App() {
       handleWindowResize: true,
       locale: 'ko',
       selectable: true,
+      // ⚡ 터치 기기 기본값(길게 눌러야 선택)을 0으로 낮춰, 예약이 없어 탭할 이벤트 요소가 없는
+      // 빈 날짜도 한 번 탭만으로 바로 선택(select)되도록 함
+      selectLongPressDelay: 0,
       allDaySlot: false,
       slotMinTime: '08:30:00',
       slotMaxTime: '17:30:00',
