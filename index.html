@@ -1318,23 +1318,6 @@ function App() {
   const calendarContainerRef = React.useRef(null);
   const calendarInstanceRef = React.useRef(null);
   const lastSelectedRef = React.useRef(null);
-  const preCollapseDateRef = React.useRef(null);
-  // ⚡ 모바일: 날짜 선택 시 달력을 주간 보기로 접어 하단 예약 목록이 바로 눈에 띄도록 함
-  const collapseCalendarToWeek = dateStr => {
-    const calendar = calendarInstanceRef.current;
-    if (!calendar) return;
-    if (calendar.view.type !== 'dayGridWeek') {
-      preCollapseDateRef.current = calendar.getDate();
-    }
-    calendar.changeView('dayGridWeek', dateStr);
-  };
-  const expandCalendarToMonth = () => {
-    const calendar = calendarInstanceRef.current;
-    if (!calendar) return;
-    if (calendar.view.type === 'dayGridWeek') {
-      calendar.changeView('dayGridMonth', preCollapseDateRef.current || calendar.getDate());
-    }
-  };
   const eventsRef = React.useRef(events);
   const lastFetchedTokenRef = React.useRef('__initial__');
   const [showNotice, setShowNotice] = React.useState(false);
@@ -1402,7 +1385,6 @@ function App() {
       if (event.key !== 'Escape') return;
       setShowMyBookings(false);
       setShowListModal(false);
-      expandCalendarToMonth();
       setShowNotice(false);
       setShowForm(false);
       setShowInstruction(false);
@@ -1547,7 +1529,6 @@ function App() {
         endDate: toDateStr(endObj)
       });
       setShowListModal(false);
-      expandCalendarToMonth();
       setShowMyBookings(false);
       setShowForm(true);
     } catch (e) {
@@ -1556,9 +1537,6 @@ function App() {
       setLoading(false);
     }
   };
-  React.useEffect(() => {
-    eventsRef.current = events;
-  }, [events]);
   const fetchBookings = async (isSilent = false) => {
     const silent = isSilent === true;
     if (!silent) setLoading(true);
@@ -1765,18 +1743,36 @@ function App() {
     } else if (isToday && isDayGridView) {
       leftTag = `<span class="fc-today-badge" style="font-size: 10px; font-weight: 800; color: #2563eb; background-color: rgba(37,99,235,0.12); padding: 1px 4px; border-radius: 3px; white-space: nowrap; line-height: 1.1;">오늘</span>`;
     }
-    if (leftTag) {
-      return {
-        html: `<div class="fc-daynum-row" style="display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; min-width: 0 !important; gap: 4px !important; white-space: nowrap !important;">
+    const dayNumRowHtml = leftTag ? `<div class="fc-daynum-row" style="display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; min-width: 0 !important; gap: 4px !important; white-space: nowrap !important;">
                             ${leftTag}
                             <span class="fc-day-num" style="flex-shrink: 0; ${numColor}">${dayNumber}</span>
-                        </div>`
-      };
+                        </div>` : `<div style="display: flex !important; justify-content: flex-end !important; align-items: center !important; width: 100% !important;">
+                        <span class="fc-day-num" style="${numColor}">${dayNumber}</span>
+                    </div>`;
+
+    // ⚡ 모바일 월간 보기: 예약 내역을 막대 대신 작은 점으로 표시 (네이버 캘린더 스타일)
+    let dotsRowHtml = '';
+    if (window.innerWidth < 640 && arg.view.type === 'dayGridMonth') {
+      const dayStart = new Date(arg.date.getFullYear(), arg.date.getMonth(), arg.date.getDate());
+      const dayEnd = new Date(dayStart.getTime() + 86400000);
+      const dayEvents = (eventsRef.current || []).filter(ev => {
+        const evStart = new Date(ev.start);
+        const evEnd = new Date(ev.end);
+        return evStart < dayEnd && evEnd > dayStart;
+      });
+      if (dayEvents.length > 0) {
+        const maxDots = 4;
+        const dots = dayEvents.slice(0, maxDots).map(ev => {
+          const isMine = ev.extendedProps?.isMine === true;
+          const color = isMine ? '#2563eb' : ev.extendedProps?.colorCode || '#94a3b8';
+          return `<span style="width: 4.5px; height: 4.5px; border-radius: 9999px; background-color: ${color}; display: inline-block; flex-shrink: 0;"></span>`;
+        }).join('');
+        const extra = dayEvents.length > maxDots ? `<span style="font-size: 7px; color: #94a3b8; line-height: 1; margin-left: 1px;">+${dayEvents.length - maxDots}</span>` : '';
+        dotsRowHtml = `<div style="display: flex; justify-content: center; align-items: center; gap: 2.5px; width: 100%; margin-top: 2px;">${dots}${extra}</div>`;
+      }
     }
     return {
-      html: `<div style="display: flex !important; justify-content: flex-end !important; align-items: center !important; width: 100% !important;">
-                        <span class="fc-day-num" style="${numColor}">${dayNumber}</span>
-                    </div>`
+      html: `${dayNumRowHtml}${dotsRowHtml}`
     };
   };
 
@@ -1784,7 +1780,7 @@ function App() {
   // ⚡ 하루에 보여줄 예약 최대 줄 수 (화면 크기에 따라 고정값으로 계산 -> "true" 자동계산의 날짜별 오차 제거)
   const getDayMaxEventRows = () => {
     const w = window.innerWidth;
-    if (w < 480) return 2;
+    if (w < 640) return false; // 모바일 월간 보기는 막대 대신 점으로 표시하므로 줄 수 제한 불필요
     if (w < 768) return 3;
     return 4;
   };
@@ -1848,6 +1844,12 @@ function App() {
       },
       dayCellContent: renderDayCellContent,
       eventContent: function (arg) {
+        // ⚡ 모바일 월간 보기에서는 막대 대신 날짜 칸의 점으로 예약을 표시하므로 기본 이벤트 막대는 숨김
+        if (window.innerWidth < 640 && arg.view.type === 'dayGridMonth') {
+          return {
+            html: ''
+          };
+        }
         const start = new Date(arg.event.start);
         const end = new Date(arg.event.end);
 
@@ -1933,7 +1935,6 @@ function App() {
           }));
           setSelectedDateReservations(dayEvents);
           setShowListModal(true);
-          collapseCalendarToWeek(sDate);
         } else {
           setSelectedEvent(null);
           if (user.canAdminAuth) {
@@ -1987,7 +1988,6 @@ function App() {
           }));
           setSelectedDateReservations(dayEvents);
           setShowListModal(true);
-          collapseCalendarToWeek(sDate);
         } else {
           openBookingById(info.event.id, info.event.start, info.event.end);
         }
@@ -2036,8 +2036,10 @@ function App() {
         return budget === budgetFilter;
       });
     }
+    eventsRef.current = visibleEvents;
     calendarInstanceRef.current.removeAllEvents();
     calendarInstanceRef.current.addEventSource(visibleEvents);
+    calendarInstanceRef.current.render();
   }, [events, budgetFilter]);
   React.useEffect(() => {
     if (calendarInstanceRef.current) {
@@ -2384,13 +2386,13 @@ function App() {
     }, "|"), " codeyj@duck.com")));
   }
   return /*#__PURE__*/React.createElement("div", {
-    className: "relative min-h-dvh h-auto sm:h-dvh flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200 overflow-x-hidden overflow-y-auto sm:overflow-hidden"
+    className: "relative h-dvh flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200 overflow-x-hidden overflow-hidden"
   }, /*#__PURE__*/React.createElement("header", {
-    className: "relative bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shrink-0 shadow-sm transition-colors duration-200 z-20"
+    className: "relative bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-1.5 sm:py-3 flex flex-col sm:flex-row justify-between sm:items-center gap-1 sm:gap-3 shrink-0 shadow-sm transition-colors duration-200 z-20"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col select-none relative z-10"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "text-lg font-bold text-slate-900 dark:text-white tracking-tight cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition",
+    className: "text-sm sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition",
     onClick: () => {
       setShowMyBookings(false);
       setShowForm(false);
@@ -2402,7 +2404,7 @@ function App() {
       }
     }
   }, "DNS : Card-Portal"), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center text-[11px] sm:text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium"
+    className: "hidden sm:flex items-center text-[11px] sm:text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium"
   }, /*#__PURE__*/React.createElement("svg", {
     xmlns: "http://www.w3.org/2000/svg",
     className: "w-3.5 h-3.5 mr-1",
@@ -2542,13 +2544,13 @@ function App() {
     onClick: openAnnouncementEditor,
     className: "shrink-0 text-[11px] font-semibold underline hover:no-underline"
   }, "\uC218\uC815")), /*#__PURE__*/React.createElement("main", {
-    className: "flex-none sm:flex-1 w-full p-2 sm:p-4 pb-20 sm:pb-4 min-h-0 flex flex-col relative"
+    className: "flex-1 w-full p-2 sm:p-4 pb-20 sm:pb-4 min-h-0 flex flex-col relative overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "md:hidden shrink-0 mb-2 space-y-2"
+    className: "md:hidden shrink-0 mb-1.5 space-y-2"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between gap-3 shadow-sm select-none"
+    className: "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-1.5 flex items-center justify-between gap-3 shadow-sm select-none"
   }, isFetchingStatus ? /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col items-center justify-center min-h-[40px] w-full"
+    className: "flex flex-col items-center justify-center min-h-[26px] w-full"
   }, /*#__PURE__*/React.createElement("div", {
     className: "typing-indicator scale-75"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2586,7 +2588,7 @@ function App() {
   }, "\uB2E4\uC74C \uC608\uC57D"), /*#__PURE__*/React.createElement("div", {
     className: "text-xs font-semibold text-slate-700 dark:text-slate-200 mt-0.5"
   }, formatShortDate(nextBooking.start), " ", formatClock(nextBooking.start)))))), user.isAdmin && /*#__PURE__*/React.createElement("div", {
-    className: "shrink-0 mb-2 sm:mb-3 flex gap-1.5 overflow-x-auto pb-1 select-none"
+    className: "shrink-0 mb-1 sm:mb-3 flex gap-1.5 overflow-x-auto pb-1 select-none"
   }, [{
     key: '전체',
     label: '전체'
@@ -2610,7 +2612,7 @@ function App() {
     onClick: () => setBudgetFilter(item.key),
     className: `shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${budgetFilter === item.key ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`
   }, item.label))), /*#__PURE__*/React.createElement("div", {
-    className: "shrink-0 mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-slate-500 dark:text-slate-400",
+    className: "hidden sm:flex shrink-0 mb-2 flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-slate-500 dark:text-slate-400",
     "aria-label": "\uCE98\uB9B0\uB354 \uBC94\uB840"
   }, /*#__PURE__*/React.createElement("span", {
     className: "inline-flex items-center gap-1.5"
@@ -2627,17 +2629,19 @@ function App() {
   }), "\uC8FC\uB9D0\xB7\uACF5\uD734\uC77C"), /*#__PURE__*/React.createElement("span", {
     className: "ml-auto hidden sm:inline text-slate-400 dark:text-slate-500"
   }, "\uB0A0\uC9DC\uB97C \uC120\uD0DD\uD558\uBA74 \uC608\uC57D\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4")), /*#__PURE__*/React.createElement("div", {
-    className: `${showListModal ? 'h-[250px]' : 'h-[620px]'} sm:h-full shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-4 relative transition-[height,background-color,border-color] duration-200 ease-out overflow-hidden`
+    className: "flex-1 min-h-0 flex flex-col gap-2 sm:gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-4 relative transition-colors duration-200 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
     ref: calendarContainerRef,
     id: "calendar",
     className: "w-full h-full"
   })), showListModal && /*#__PURE__*/React.createElement("div", {
-    className: "sm:hidden mt-3 shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4"
+    className: "sm:hidden flex-1 min-h-0 flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4"
   }, /*#__PURE__*/React.createElement("h3", {
-    className: "font-bold mb-3 text-slate-900 dark:text-white text-sm"
+    className: "shrink-0 font-bold mb-2 text-slate-900 dark:text-white text-sm"
   }, selectedSlot?.startDate, " 예약 목록"), selectedDateReservations.length > 0 ? /*#__PURE__*/React.createElement("div", {
-    className: "max-h-[40vh] overflow-y-auto -mx-1"
+    className: "flex-1 min-h-0 overflow-y-auto -mx-1"
   }, selectedDateReservations.map(ev => {
     const formatTime = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     const formatDate = d => String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
@@ -2655,11 +2659,10 @@ function App() {
   })) : /*#__PURE__*/React.createElement("p", {
     className: "text-slate-500 dark:text-slate-400 text-sm text-center py-4"
   }, "예약된 내역이 없습니다."), /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-2 mt-4"
+    className: "shrink-0 flex gap-2 mt-4"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setShowListModal(false);
-      expandCalendarToMonth();
       calendarInstanceRef.current?.unselect();
     },
     className: "flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 py-3 rounded-xl font-medium transition text-sm"
@@ -2667,7 +2670,6 @@ function App() {
     onClick: () => {
       setSelectedEvent(null);
       setShowListModal(false);
-      expandCalendarToMonth();
       if (user.canAdminAuth) {
         confirmNotice();
       } else {
@@ -2675,7 +2677,7 @@ function App() {
       }
     },
     className: "flex-[2] bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl shadow-md font-medium transition text-sm"
-  }, "+ 신규 예약"))), loading && /*#__PURE__*/React.createElement("div", {
+  }, "+ 신규 예약")))), loading && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 bg-black/30 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white/95 dark:bg-slate-800/95 px-8 py-6 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col items-center gap-3 select-none"
