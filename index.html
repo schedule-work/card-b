@@ -439,8 +439,21 @@
             .fc-scroller,
             .fc-scroller-liquid-absolute {
                 overscroll-behavior: auto;
-                touch-action: pan-y;
+                touch-action: pan-y !important;
                 overflow-x: hidden !important;
+            }
+
+            /* ⚡ FullCalendar는 날짜 셀(day-frame)에 터치 드래그 선택을 위해 touch-action: none을
+               걸어두는데, selectable을 꺼도 이 값이 남아 있으면 손가락으로 스크롤하려는 동작이
+               그대로 "선택 시도"로 가로채여 전혀 스크롤되지 않는다. 날짜 칸 자체에도 세로 스크롤을
+               명시적으로 허용해 스크롤이 선택 로직보다 우선하도록 강제한다. */
+            .fc-daygrid-day-frame,
+            .fc-daygrid-day-events,
+            .fc-daygrid-day-bg,
+            .fc-daygrid-body,
+            .fc-daygrid-body table,
+            .fc-scrollgrid-sync-table {
+                touch-action: pan-y !important;
             }
 
             .fc,
