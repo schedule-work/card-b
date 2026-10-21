@@ -1866,10 +1866,14 @@ function App() {
       windowResize: function (arg) {
         arg.view.calendar.setOption('dayMaxEventRows', getDayMaxEventRows());
         arg.view.calendar.setOption('slotDuration', getSlotDuration());
+        arg.view.calendar.setOption('selectable', window.innerWidth >= 640);
       },
       handleWindowResize: true,
       locale: 'ko',
-      selectable: true,
+      // ⚡ selectable(드래그 범위 선택)은 터치 동작을 가로채기 위해 내부적으로 터치 이벤트를 직접
+      // 처리하는데, 이게 longPressDelay 값과 무관하게 모바일에서 화면을 손가락으로 스크롤하려는
+      // 제스처까지 붙잡아 버린다. 모바일 탭은 dateClick이 전담하므로 selectable은 데스크톱에서만 켠다.
+      selectable: window.innerWidth >= 640,
       allDaySlot: false,
       slotMinTime: '08:30:00',
       slotMaxTime: '17:30:00',
