@@ -2907,7 +2907,11 @@ function App() {
     role: "dialog",
     "aria-modal": "true",
     "aria-labelledby": "booking-form-title",
-    className: "fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+    // ⚡ items-center + overflow-y-auto 조합은, 내용이 화면보다 길어지면(모바일에서 자주 발생)
+    // 중앙 정렬 때문에 위쪽으로 넘친 부분을 스크롤로도 올라갈 수 없게 가려버리는 브라우저 공통 버그가
+    // 있다. 모바일에서는 상단 정렬(items-start)로 바꿔 내용이 항상 위에서부터 보이고 아래로만
+    // 스크롤되게 하고, 화면이 넉넉한 sm 이상에서만 중앙 정렬을 유지한다.
+    className: "fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 z-50 overflow-y-auto"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl p-5 sm:p-6 border border-slate-100 dark:border-slate-700 my-4 relative"
   }, /*#__PURE__*/React.createElement("div", {
