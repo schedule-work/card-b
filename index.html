@@ -1870,9 +1870,6 @@ function App() {
       handleWindowResize: true,
       locale: 'ko',
       selectable: true,
-      // ⚡ 터치 기기 기본값(길게 눌러야 선택)을 0으로 낮춰, 예약이 없어 탭할 이벤트 요소가 없는
-      // 빈 날짜도 한 번 탭만으로 바로 선택(select)되도록 함
-      selectLongPressDelay: 0,
       allDaySlot: false,
       slotMinTime: '08:30:00',
       slotMaxTime: '17:30:00',
@@ -1932,19 +1929,66 @@ function App() {
         };
       },
       unselect: function () {},
-      select: function (info) {
+      // ⚡ 모바일 탭은 dateClick에서 처리한다. select(드래그 범위 선택)는 터치 기기에서
+      // 스크롤 제스처와 구분하기 위해 길게 눌러야만 발동하므로, 짧은 탭으로 화면을 스크롤하려는
+      // 동작까지 선택으로 가로채 버린다(selectLongPressDelay를 낮추면 이 문제가 생김).
+      // dateClick은 길게 누를 필요 없이 일반 탭/클릭에서 바로 발동하면서도 스크롤과 충돌하지 않는다.
+      dateClick: function (info) {
+        if (window.innerWidth >= 640) return;
         const calendar = info.view.calendar;
-        const currentSelectedStr = info.startStr;
-        const isMobile = window.innerWidth < 640;
-        // ⚡ 모바일에서는 "한 번 탭 = 선택, 두 번째 탭 = 확정" 방식(데스크톱 예약 폼 전용 동작) 대신
-        // 한 번 탭으로 바로 해당 날짜의 예약 내역이 뜨도록 즉시 처리합니다.
-        if (!isMobile) {
-          if (lastSelectedRef.current !== currentSelectedStr) {
-            lastSelectedRef.current = currentSelectedStr;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const maxSelectDate = new Date();
+        maxSelectDate.setMonth(maxSelectDate.getMonth() + 2);
+        // ⚡ info.dateStr은 Week/Day(timeGrid) 뷰에서는 시간까지 포함되므로 날짜 부분만 사용
+        const sDate = info.dateStr.split('T')[0];
+        const clickedDate = new Date(sDate + "T00:00:00");
+        if (!userRef.current.isAdmin) {
+          if (clickedDate < today) {
+            alert("⚠️ 지난 날짜는 예약할 수 없습니다.");
             return;
           }
-          lastSelectedRef.current = null;
+          if (clickedDate > maxSelectDate) {
+            alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
+            return;
+          }
+          if (!isAvailableDate(sDate)) {
+            alert("⚠️ 주말 및 공휴일은 예약할 수 없습니다.");
+            return;
+          }
         }
+        setSelectedSlot({
+          startDate: sDate,
+          endDate: sDate
+        });
+        const allFcEvents = calendar.getEvents();
+        const clickedTime = clickedDate.getTime();
+        const nextDayTime = clickedTime + 24 * 60 * 60 * 1000;
+        const dayEvents = allFcEvents.filter(ev => {
+          return ev.start.getTime() < nextDayTime && ev.end.getTime() > clickedTime;
+        }).map(ev => ({
+          id: ev.id,
+          title: ev.title,
+          startObj: ev.start,
+          endObj: ev.end,
+          extendedProps: ev.extendedProps
+        }));
+        setSelectedDateReservations(dayEvents);
+        setShowListModal(true);
+      },
+      select: function (info) {
+        // ⚡ 모바일 탭은 위 dateClick이 전담하므로 여기서는 데스크톱(드래그 범위 선택)만 처리한다.
+        if (window.innerWidth < 640) {
+          calendarInstanceRef.current.unselect();
+          return;
+        }
+        const calendar = info.view.calendar;
+        const currentSelectedStr = info.startStr;
+        if (lastSelectedRef.current !== currentSelectedStr) {
+          lastSelectedRef.current = currentSelectedStr;
+          return;
+        }
+        lastSelectedRef.current = null;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const maxSelectDate = new Date();
@@ -1976,48 +2020,31 @@ function App() {
           startDate: sDate,
           endDate: eDate
         });
-        if (window.innerWidth < 640) {
-          const allFcEvents = calendar.getEvents();
-          const clickedTime = new Date(sDate + "T00:00:00").getTime();
-          const nextDayTime = clickedTime + 24 * 60 * 60 * 1000;
-          const dayEvents = allFcEvents.filter(ev => {
-            return ev.start.getTime() < nextDayTime && ev.end.getTime() > clickedTime;
-          }).map(ev => ({
-            id: ev.id,
-            title: ev.title,
-            startObj: ev.start,
-            endObj: ev.end,
-            extendedProps: ev.extendedProps
-          }));
-          setSelectedDateReservations(dayEvents);
-          setShowListModal(true);
+        setSelectedEvent(null);
+        if (userRef.current.canAdminAuth) {
+          // ⚡ 관리자 계정으로 로그인한 경우(추가 PIN 인증 전이라도) 법인카드 대여 사전 유의사항 안내를 건너뛰고 바로 예약 폼으로 이동
+          setDeptSelect('선택');
+          setDeptCustom('');
+          setBudgetSelect('간호부');
+          setBudgetCustom('');
+          setPhone1Select('010');
+          setPhone1Custom('');
+          setPhone2('');
+          setPhone3('');
+          setFormData({
+            id: '',
+            name: userRef.current.name,
+            empNo: userRef.current.empNo,
+            startDate: sDate,
+            startTimePart: '09:00',
+            endDate: eDate,
+            endTimePart: '12:00',
+            purpose: '',
+            details: ''
+          });
+          setShowForm(true);
         } else {
-          setSelectedEvent(null);
-          if (userRef.current.canAdminAuth) {
-            // ⚡ 관리자 계정으로 로그인한 경우(추가 PIN 인증 전이라도) 법인카드 대여 사전 유의사항 안내를 건너뛰고 바로 예약 폼으로 이동
-            setDeptSelect('선택');
-            setDeptCustom('');
-            setBudgetSelect('간호부');
-            setBudgetCustom('');
-            setPhone1Select('010');
-            setPhone1Custom('');
-            setPhone2('');
-            setPhone3('');
-            setFormData({
-              id: '',
-              name: userRef.current.name,
-              empNo: userRef.current.empNo,
-              startDate: sDate,
-              startTimePart: '09:00',
-              endDate: eDate,
-              endTimePart: '12:00',
-              purpose: '',
-              details: ''
-            });
-            setShowForm(true);
-          } else {
-            setShowNotice(true);
-          }
+          setShowNotice(true);
         }
         calendarInstanceRef.current.unselect();
       },
