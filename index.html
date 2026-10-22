@@ -362,6 +362,21 @@
             box-shadow: 0 2px 8px rgba(37, 99, 235, 0.5) !important;
         }
 
+        /* 하루/주 보기: 열 전체를 파란 박스로 칠하지 않는다(월 보기의 오늘·선택 표시가 시간표 열에도 번져 화면 전체가 선택된 것처럼 보임).
+           오늘은 머리글 글자색으로만 구분한다. */
+        .fc-timegrid-col.fc-day-today,
+        .fc-timegrid-col.selected-date-cell,
+        .fc-col-header-cell.fc-day-today,
+        .fc-col-header-cell.selected-date-cell {
+            background-color: transparent !important;
+            box-shadow: none !important;
+            border-radius: 0;
+        }
+
+        .fc-col-header-cell.fc-day-today a {
+            color: #2563eb !important;
+        }
+
         /* 오늘 표시 미니 라벨 */
         .fc-today-badge {
             display: inline-flex !important;
@@ -514,6 +529,14 @@
 
             .fc th {
                 padding: 0.25rem 0 !important;
+            }
+
+            /* 하루/주 보기: 왼쪽 시간 열을 좁혀 예약 칸에 폭을 더 준다 */
+            .fc .fc-timegrid-slot-label-cushion,
+            .fc .fc-timegrid-axis-cushion {
+                padding: 0 0.25rem !important;
+                font-size: 0.65rem !important;
+                line-height: 1.1;
             }
 
             /* 모바일: 달력을 최대한 크게 — 보기 전환 버튼은 숨긴다(하단 메뉴로 전환 가능) */
@@ -1980,6 +2003,18 @@ function App() {
         const safeDept = escapeHtml(dept);
         const isMine = arg.event.extendedProps?.isMine === true;
 
+        // ⚡ 하루/주 보기(시간표)는 카드가 세로로 길어 한 줄만 쓰면 비어 보이므로 시간·부서·대여자·용도를 모두 보여준다.
+        if (arg.view.type.startsWith('timeGrid')) {
+          const owner = escapeHtml(String(arg.event.extendedProps?.name || '').trim());
+          const purpose = escapeHtml(String(arg.event.extendedProps?.purpose || '').trim());
+          return {
+            html: `<div style="background-color: ${evColor}14; border-left: 3px solid ${isMine ? '#2563eb' : evColor}cc;" class="w-full h-full px-2 py-1.5 rounded-md text-[11px] leading-snug select-none overflow-hidden flex flex-col gap-0.5">
+                                <div class="flex items-center gap-1.5 min-w-0"><span class="font-bold shrink-0 text-slate-800 dark:text-slate-100 text-[11px]">${safeTime}</span>${isMine ? '<span class="shrink-0 rounded bg-blue-100 text-blue-700 px-1 text-[9px] font-bold">Me</span>' : ''}</div>
+                                <div class="font-semibold truncate text-slate-700 dark:text-slate-200">${safeDept}${owner ? ` · ${owner}` : ''}</div>
+                                ${purpose ? `<div class="text-slate-500 dark:text-slate-400 break-words" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${purpose}</div>` : ''}
+                            </div>`
+          };
+        }
         // ⚡ 세련된 소프트 파스텔 한 줄 포맷: [시간 / 부서] (예: 2P30-5P / 50병동)
         return {
           html: `<div style="background-color: ${evColor}12; border-left: 2.5px solid ${isMine ? '#2563eb' : evColor}99; box-shadow: ${isMine ? 'inset 0 0 0 1px rgba(37,99,235,0.22)' : 'none'};" class="w-full px-1.5 py-0.5 rounded text-[11px] flex items-center gap-1.5 leading-normal select-none overflow-hidden whitespace-nowrap" title="${isMine ? 'Me · ' : ''}${safeTime} / ${safeDept}">
