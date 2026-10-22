@@ -190,6 +190,31 @@
             height: 0 !important;
         }
 
+        /* 이어지는 스크롤 보기(Scroll): 월 이동 버튼/상단 제목은 의미가 없으므로 숨기고, 달마다 붙는 제목을 또렷하게 */
+        .fc.fc-scroll-mode .fc-prev-button,
+        .fc.fc-scroll-mode .fc-next-button,
+        .fc.fc-scroll-mode .fc-toolbar-title {
+            display: none !important;
+        }
+        .fc .fc-multimonth {
+            border: 0 !important;
+        }
+        .fc .fc-multimonth-month {
+            padding: 0 0 0.75rem !important;
+        }
+        .fc .fc-multimonth-title {
+            padding: 0.4rem 0.25rem 0.2rem !important;
+            font-size: 0.95rem !important;
+            font-weight: 800 !important;
+            text-align: left !important;
+            color: #0f172a;
+        }
+        @media (prefers-color-scheme: dark) {
+            .fc .fc-multimonth-title {
+                color: #f1f5f9;
+            }
+        }
+
         /* 툴바 & 타이틀 */
         .fc .fc-legend-button {
             display: none !important;
@@ -286,8 +311,10 @@
            월 보기에만 적용한다. 하루/주 보기(시간표)의 머리글에 적용되면 머리글 칸이 17% 폭으로 줄어
            오른쪽으로 밀리고 본문 열과도 어긋난다. */
         .fc-dayGridMonth-view .fc-col-header-cell.fc-day-sun,
+        .fc-multiMonthScroll-view .fc-col-header-cell.fc-day-sun,
         .fc-daygrid-day.fc-day-sun,
         .fc-dayGridMonth-view .fc-col-header-cell.fc-day-sat,
+        .fc-multiMonthScroll-view .fc-col-header-cell.fc-day-sat,
         .fc-daygrid-day.fc-day-sat {
             width: 7.5% !important;
             min-width: 36px;
@@ -295,6 +322,7 @@
         }
 
         .fc-dayGridMonth-view .fc-col-header-cell:not(.fc-day-sun):not(.fc-day-sat),
+        .fc-multiMonthScroll-view .fc-col-header-cell:not(.fc-day-sun):not(.fc-day-sat),
         .fc-daygrid-day:not(.fc-day-sun):not(.fc-day-sat) {
             width: 17% !important;
         }
@@ -2060,6 +2088,18 @@ function App() {
       scrollTime: getNowScrollTime(),
       nowIndicator: true,
       datesSet: function (info) {
+        const isScrollView = info.view.type === 'multiMonthScroll';
+        info.view.calendar.el.classList.toggle('fc-scroll-mode', isScrollView);
+        if (isScrollView) {
+          // 처음 열 때 오늘이 있는 달이 맨 위에 오도록 스크롤한다.
+          setTimeout(() => {
+            const root = info.view.calendar.el;
+            const scroller = root.querySelector('.fc-multimonth');
+            const today = root.querySelector('.fc-day-today');
+            const month = today && today.closest('.fc-multimonth-month');
+            if (scroller && month) scroller.scrollTop = month.offsetTop - scroller.offsetTop;
+          }, 60);
+        }
         if (info.view.type === 'timeGridDay' || info.view.type === 'timeGridWeek') {
           info.view.calendar.scrollToTime(getNowScrollTime());
         }
@@ -2091,10 +2131,30 @@ function App() {
       headerToolbar: {
         left: 'prev,next today legend',
         center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        right: 'dayGridMonth,multiMonthScroll,timeGridWeek,timeGridDay'
+      },
+      // ⚡ PC용 "이어지는 스크롤" 보기: 5월(예약 가능 시작 달)부터 앞으로 몇 달을 세로로 쭉 이어 붙여 휠로 자연스럽게 넘긴다.
+      // 월 보기가 기본이며 이 보기는 툴바의 Scroll 버튼으로 전환한다(모바일에서는 툴바 우측이 숨겨져 있음).
+      views: {
+        multiMonthScroll: {
+          type: 'multiMonth',
+          multiMonthMaxColumns: 1,
+          fixedWeekCount: false,
+          // 한 달이 화면 높이를 넘지 않도록 가로로 넓은 비율을 준다(기본값이면 달 하나가 화면 1.5개 높이가 됨).
+          aspectRatio: 3.2,
+          visibleRange: function () {
+            const end = new Date();
+            end.setMonth(end.getMonth() + 4, 1);
+            return {
+              start: '2026-05-01',
+              end: end.getFullYear() + '-' + String(end.getMonth() + 1).padStart(2, '0') + '-01'
+            };
+          }
+        }
       },
       buttonText: {
         month: 'Month',
+        multiMonthScroll: 'Scroll',
         week: 'Week',
         day: 'Day'
       },
