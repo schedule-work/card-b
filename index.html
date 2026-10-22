@@ -166,7 +166,7 @@
 
         /* 툴바 & 타이틀 */
         .fc .fc-legend-button {
-            display: none;
+            display: none !important;
             background: none !important;
             border: 0 !important;
             box-shadow: none !important;
@@ -181,7 +181,14 @@
             gap: 0.75rem;
         }
         @media (min-width: 640px) {
-            .fc .fc-legend-button { display: inline-flex; align-items: center; }
+            .fc .fc-legend-button { display: inline-flex !important; align-items: center; }
+            /* 범례가 왼쪽 묶음을 넓혀도 월 제목(가운데)이 밀리지 않도록 툴바 정중앙에 고정 */
+            .fc .fc-header-toolbar { position: relative; }
+            .fc .fc-header-toolbar > .fc-toolbar-chunk:nth-child(2) {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
         }
         .fc .fc-toolbar {
             margin-bottom: 0.85rem !important;
@@ -1890,11 +1897,6 @@ function App() {
       scrollTime: getNowScrollTime(),
       nowIndicator: true,
       datesSet: function (info) {
-        const legendBtn = info.view.calendar.el.querySelector('.fc-legend-button');
-        if (legendBtn && !legendBtn.dataset.ready) {
-          legendBtn.dataset.ready = '1';
-          legendBtn.innerHTML = '<span class="inline-flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-blue-500 inline-block"></i>Me</span><span class="inline-flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-slate-400 inline-block"></i>다른 예약</span><span class="inline-flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-red-400 inline-block"></i>주말·공휴일</span>';
-        }
         if (info.view.type === 'timeGridDay' || info.view.type === 'timeGridWeek') {
           info.view.calendar.scrollToTime(getNowScrollTime());
         }
@@ -2123,7 +2125,16 @@ function App() {
       }
     };
     const calendar = new FullCalendar.Calendar(calendarContainerRef.current, calOptions);
+    // 범례 버튼 내용은 FullCalendar가 툴바를 (다시) 그릴 때 비어 있을 수 있어, 비어 있으면 매번 다시 채운다.
+    const LEGEND_HTML = '<span class="inline-flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-blue-500 inline-block"></i>Me</span><span class="inline-flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-slate-400 inline-block"></i>다른 예약</span><span class="inline-flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-red-400 inline-block"></i>주말·공휴일</span>';
+    const fillLegend = () => {
+      const btn = calendarContainerRef.current?.querySelector('.fc-header-toolbar .fc-legend-button');
+      if (btn && !btn.querySelector('i')) btn.innerHTML = LEGEND_HTML;
+    };
+    const legendObserver = new MutationObserver(fillLegend);
+    legendObserver.observe(calendarContainerRef.current, { childList: true, subtree: true });
     calendar.render();
+    fillLegend();
     calendarInstanceRef.current = calendar;
     syncCalendarEvents();
     calendar.today();
@@ -2248,6 +2259,7 @@ function App() {
     swipeEl.addEventListener('touchend', onTouchEnd, { passive: true });
     swipeEl.addEventListener('touchcancel', onTouchEnd, { passive: true });
     return () => {
+      legendObserver.disconnect();
       swipeEl.removeEventListener('touchstart', onTouchStart);
       swipeEl.removeEventListener('touchmove', onTouchMove);
       swipeEl.removeEventListener('touchend', onTouchEnd);
