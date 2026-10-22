@@ -2080,10 +2080,9 @@ function App() {
         alert(reason);
       }
     };
+    // 월 보기에서 휠을 내리면 Scroll 보기로 이어서 넘어가는데, 그때 보고 있던 달('YYYY-MM')을 기억해 그 달이 맨 위에 오게 한다.
     let pendingScrollMonth = null;
     const calOptions = {
-      // PC는 처음부터 이어지는 스크롤 보기로 열어 바로 휠로 넘길 수 있게 하고, 모바일은 기존 월 보기를 쓴다.
-      initialView: window.innerWidth >= 640 ? 'multiMonthScroll' : 'dayGridMonth',
       height: '100%',
       expandRows: true,
       dayMaxEventRows: getDayMaxEventRows(),
@@ -2139,7 +2138,7 @@ function App() {
       headerToolbar: {
         left: 'prev,next today legend',
         center: 'title',
-        right: 'multiMonthScroll,dayGridMonth,timeGridWeek,timeGridDay'
+        right: 'dayGridMonth,multiMonthScroll,timeGridWeek,timeGridDay'
       },
       // ⚡ PC용 "이어지는 스크롤" 보기: 5월(예약 가능 시작 달)부터 앞으로 몇 달을 세로로 쭉 이어 붙여 휠로 자연스럽게 넘긴다.
       // 월 보기가 기본이며 이 보기는 툴바의 Scroll 버튼으로 전환한다(모바일에서는 툴바 우측이 숨겨져 있음).
@@ -2518,12 +2517,23 @@ function App() {
       swipe = null;
       if (sw.dir === 'h') finishSwipe(sw);
     };
+    // PC: 월 보기에서 휠을 굴리면 같은 달 위치에서 이어지는 Scroll 보기로 넘어가 계속 스크롤된다.
+    const onWheel = e => {
+      if (window.innerWidth < 640 || Math.abs(e.deltaY) < 4 || e.ctrlKey) return;
+      if (calendar.view.type !== 'dayGridMonth') return;
+      if (e.target.closest && e.target.closest('.fc-popover')) return;
+      const d = calendar.view.currentStart;
+      pendingScrollMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      calendar.changeView('multiMonthScroll');
+    };
+    swipeEl.addEventListener('wheel', onWheel, { passive: true });
     swipeEl.addEventListener('touchstart', onTouchStart, { passive: true });
     swipeEl.addEventListener('touchmove', onTouchMove, { passive: true });
     swipeEl.addEventListener('touchend', onTouchEnd, { passive: true });
     swipeEl.addEventListener('touchcancel', onTouchEnd, { passive: true });
     return () => {
       legendObserver.disconnect();
+      swipeEl.removeEventListener('wheel', onWheel);
       swipeEl.removeEventListener('touchstart', onTouchStart);
       swipeEl.removeEventListener('touchmove', onTouchMove);
       swipeEl.removeEventListener('touchend', onTouchEnd);
@@ -2969,7 +2979,7 @@ function App() {
       setShowNotice(false);
       if (calendarInstanceRef.current) {
         calendarInstanceRef.current.today();
-        calendarInstanceRef.current.changeView(window.innerWidth >= 640 ? 'multiMonthScroll' : 'dayGridMonth');
+        calendarInstanceRef.current.changeView('dayGridMonth');
       }
     }
   }, "DNS : Card-Portal"), /*#__PURE__*/React.createElement("div", {
@@ -3851,7 +3861,7 @@ function App() {
     onClick: () => {
       setShowListModal(false);
       if (!calendarInstanceRef.current) return;
-      calendarInstanceRef.current.changeView(window.innerWidth >= 640 ? 'multiMonthScroll' : 'dayGridMonth');
+      calendarInstanceRef.current.changeView('dayGridMonth');
     },
     className: "flex flex-col items-center justify-center gap-0 py-0.5 text-slate-500 dark:text-slate-300"
   }, /*#__PURE__*/React.createElement("svg", {
