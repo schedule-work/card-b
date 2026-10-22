@@ -2163,8 +2163,11 @@ function App() {
           return;
         }
         const calendar = info.view.calendar;
+        // ⚡ 여러 날을 드래그해서 선택한 경우(2일 이상)는 손을 떼는 즉시 그 기간으로 예약 신청을 시작한다.
+        // 하루 클릭은 실수로 창이 뜨지 않도록 같은 날짜를 한 번 더 눌러야 열린다(기존 동작).
+        const isRangeDrag = info.allDay && Math.round((info.end - info.start) / 86400000) > 1;
         const currentSelectedStr = info.startStr;
-        if (lastSelectedRef.current !== currentSelectedStr) {
+        if (!isRangeDrag && lastSelectedRef.current !== currentSelectedStr) {
           lastSelectedRef.current = currentSelectedStr;
           return;
         }
