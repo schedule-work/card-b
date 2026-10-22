@@ -165,6 +165,24 @@
         }
 
         /* 툴바 & 타이틀 */
+        .fc .fc-legend-button {
+            display: none;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            pointer-events: none;
+            cursor: default;
+            padding: 0 0 0 0.5rem !important;
+            font-size: 11px !important;
+            font-weight: 500 !important;
+            color: #94a3b8 !important;
+            text-transform: none !important;
+            white-space: nowrap;
+            gap: 0.75rem;
+        }
+        @media (min-width: 640px) {
+            .fc .fc-legend-button { display: inline-flex; align-items: center; }
+        }
         .fc .fc-toolbar {
             margin-bottom: 0.85rem !important;
             gap: 0.75rem;
@@ -1872,6 +1890,11 @@ function App() {
       scrollTime: getNowScrollTime(),
       nowIndicator: true,
       datesSet: function (info) {
+        const legendBtn = info.view.calendar.el.querySelector('.fc-legend-button');
+        if (legendBtn && !legendBtn.dataset.ready) {
+          legendBtn.dataset.ready = '1';
+          legendBtn.innerHTML = '<span class="inline-flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-blue-500 inline-block"></i>Me</span><span class="inline-flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-slate-400 inline-block"></i>다른 예약</span><span class="inline-flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-red-400 inline-block"></i>주말·공휴일</span>';
+        }
         if (info.view.type === 'timeGridDay' || info.view.type === 'timeGridWeek') {
           info.view.calendar.scrollToTime(getNowScrollTime());
         }
@@ -1894,8 +1917,14 @@ function App() {
       validRange: {
         start: '2026-05-01'
       },
+      // 범례(Me/다른 예약/주말·공휴일)는 달력 영역을 넓히려고 오늘 버튼 오른쪽 툴바에 둔다. 내용은 datesSet에서 채운다.
+      customButtons: {
+        legend: {
+          text: ''
+        }
+      },
       headerToolbar: {
-        left: 'prev,next today',
+        left: 'prev,next today legend',
         center: 'title',
         right: 'dayGridMonth,timeGridWeek,timeGridDay'
       },
@@ -2847,23 +2876,6 @@ function App() {
     onClick: () => setBudgetFilter(item.key),
     className: `shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${budgetFilter === item.key ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`
   }, item.label))), /*#__PURE__*/React.createElement("div", {
-    className: "hidden sm:flex shrink-0 mb-2 flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-slate-500 dark:text-slate-400",
-    "aria-label": "\uCE98\uB9B0\uB354 \uBC94\uB840"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "inline-flex items-center gap-1.5"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "w-2 h-2 rounded-full bg-blue-500"
-  }), "Me"), /*#__PURE__*/React.createElement("span", {
-    className: "inline-flex items-center gap-1.5"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "w-2 h-2 rounded-full bg-slate-400"
-  }), "\uB2E4\uB978 \uC608\uC57D"), /*#__PURE__*/React.createElement("span", {
-    className: "inline-flex items-center gap-1.5"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "w-2 h-2 rounded-full bg-red-400"
-  }), "\uC8FC\uB9D0\xB7\uACF5\uD734\uC77C"), /*#__PURE__*/React.createElement("span", {
-    className: "ml-auto hidden sm:inline text-slate-400 dark:text-slate-500"
-  }, "\uB0A0\uC9DC\uB97C \uC120\uD0DD\uD558\uBA74 \uC608\uC57D\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4")), /*#__PURE__*/React.createElement("div", {
     className: "flex-1 min-h-0 flex flex-col gap-2 sm:gap-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-4 relative transition-colors duration-200 overflow-hidden"
