@@ -256,17 +256,19 @@
             color: #2563eb !important;
         }
 
-        /* ⚡ 요일별 비대칭 너비: 평일(월~금) 와이드 17%, 주말(토/일) 슬림 7.5% */
-        .fc-col-header-cell.fc-day-sun,
+        /* ⚡ 요일별 비대칭 너비: 평일(월~금) 와이드 17%, 주말(토/일) 슬림 7.5%
+           월 보기에만 적용한다. 하루/주 보기(시간표)의 머리글에 적용되면 머리글 칸이 17% 폭으로 줄어
+           오른쪽으로 밀리고 본문 열과도 어긋난다. */
+        .fc-dayGridMonth-view .fc-col-header-cell.fc-day-sun,
         .fc-daygrid-day.fc-day-sun,
-        .fc-col-header-cell.fc-day-sat,
+        .fc-dayGridMonth-view .fc-col-header-cell.fc-day-sat,
         .fc-daygrid-day.fc-day-sat {
             width: 7.5% !important;
             min-width: 36px;
             background-color: rgba(248, 250, 252, 0.7);
         }
 
-        .fc-col-header-cell:not(.fc-day-sun):not(.fc-day-sat),
+        .fc-dayGridMonth-view .fc-col-header-cell:not(.fc-day-sun):not(.fc-day-sat),
         .fc-daygrid-day:not(.fc-day-sun):not(.fc-day-sat) {
             width: 17% !important;
         }
