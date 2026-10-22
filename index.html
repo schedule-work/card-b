@@ -734,6 +734,73 @@
                 color: #f8fafc !important;
             }
         }
+
+        /* ⚡ PC(640px 이상): 달력 툴바와 요일 머리글을 얇게. 라이트/다크 규칙보다 뒤에 두어 항상 우선한다.
+           버튼은 테두리·배경 없이 글자만 두고, 현재 보기만 파란 굵은 글씨로 구분한다. */
+        @media (min-width: 640px) {
+            .fc th {
+                padding: 0.1rem 0 !important;
+            }
+
+            .fc .fc-col-header-cell-cushion {
+                padding: 2px 4px !important;
+                line-height: 1.2;
+            }
+
+            .fc .fc-toolbar {
+                margin-bottom: 0.2rem !important;
+            }
+
+            .fc .fc-button,
+            .fc .fc-button-primary {
+                background: transparent !important;
+                border-color: transparent !important;
+                box-shadow: none !important;
+                padding: 0.15rem 0.5rem !important;
+                font-size: 0.75rem !important;
+                border-radius: 0.4rem !important;
+            }
+
+            .fc .fc-button:hover {
+                background: rgba(100, 116, 139, 0.12) !important;
+                transform: none !important;
+            }
+
+            .fc .fc-button-group {
+                gap: 0.25rem;
+            }
+
+            .fc .fc-button-group > .fc-button {
+                margin-left: 0 !important;
+            }
+
+            .fc .fc-button .fc-icon {
+                font-size: 1.15em !important;
+            }
+
+            .fc .fc-button-active,
+            .fc .fc-button-primary:not(:disabled).fc-button-active,
+            .fc .fc-button-primary:not(:disabled):active {
+                background: transparent !important;
+                border-color: transparent !important;
+                box-shadow: none !important;
+                color: #2563eb !important;
+                font-weight: 800 !important;
+                text-decoration: underline;
+                text-underline-offset: 5px;
+            }
+
+            .fc .fc-button-primary:disabled {
+                opacity: 0.35;
+            }
+        }
+
+        @media (min-width: 640px) and (prefers-color-scheme: dark) {
+            .fc .fc-button-active,
+            .fc .fc-button-primary:not(:disabled).fc-button-active {
+                color: #60a5fa !important;
+            }
+        }
     </style>
 
     <link rel="icon" href="tiger_sunglasses.png" type="image/png">
