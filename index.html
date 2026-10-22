@@ -150,26 +150,31 @@
 
         /* ⚡ 팝업/목록 안의 스크롤바: 둥근 모서리 바깥으로 튀어나오는 굵은 기본 스크롤바 대신 얇고 은은한 막대로 */
         @supports not selector(::-webkit-scrollbar) {
-            .soft-scroll {
+            .soft-scroll,
+            .fc-multimonth {
                 scrollbar-width: thin;
                 scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
             }
         }
-        .soft-scroll::-webkit-scrollbar {
+        .soft-scroll::-webkit-scrollbar,
+        .fc-multimonth::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
-        .soft-scroll::-webkit-scrollbar-track {
+        .soft-scroll::-webkit-scrollbar-track,
+        .fc-multimonth::-webkit-scrollbar-track {
             background: transparent;
             margin: 16px 0;
         }
-        .soft-scroll::-webkit-scrollbar-thumb {
+        .soft-scroll::-webkit-scrollbar-thumb,
+        .fc-multimonth::-webkit-scrollbar-thumb {
             background: rgba(148, 163, 184, 0.55);
             border-radius: 9999px;
             border: 2px solid transparent;
             background-clip: content-box;
         }
-        .soft-scroll::-webkit-scrollbar-thumb:hover {
+        .soft-scroll::-webkit-scrollbar-thumb:hover,
+        .fc-multimonth::-webkit-scrollbar-thumb:hover {
             background: rgba(100, 116, 139, 0.75);
             background-clip: content-box;
         }
@@ -2994,7 +2999,7 @@ function App() {
     d: "M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 0 1 .67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 1 1-.671-1.34l.041-.022ZM12 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z",
     clipRule: "evenodd"
   })), /*#__PURE__*/React.createElement("span", null, "\uC608\uC57D\uC740 \uCD5C\uB300 2\uAC1C\uC6D4 \uB0B4 / 3\uC77C \uCD08\uACFC \uC7A5\uAE30 \uC608\uC57D\uC740 \uC81C\uD55C\uB429\uB2C8\uB2E4."))), /*#__PURE__*/React.createElement("div", {
-    className: "hidden md:flex absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[30] items-center gap-3 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-1 shadow-sm select-none transition-all whitespace-nowrap"
+    className: "hidden md:flex absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[30] items-center gap-3 px-3 py-1 select-none transition-all whitespace-nowrap"
   }, isFetchingStatus ? /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 text-slate-500 dark:text-slate-400 px-1 py-0.5"
   }, /*#__PURE__*/React.createElement("div", {
