@@ -429,14 +429,16 @@
             color: #2563eb !important;
         }
 
-        /* ⚡ 예약 불가 기간으로 지정된 날짜 셀에 은은한 회색 음영 적용 */
+        /* ⚡ 공휴일·예약 불가 기간처럼 예약할 수 없는 날짜 셀은 토/일요일 칸과 똑같은 회색 음영을 쓴다 */
+        .holiday-day,
         .unavailable-day {
-            background-color: rgba(100, 116, 139, 0.08) !important;
+            background-color: rgba(248, 250, 252, 0.7) !important;
         }
 
         @media (prefers-color-scheme: dark) {
+            .holiday-day,
             .unavailable-day {
-                background-color: rgba(148, 163, 184, 0.1) !important;
+                background-color: rgba(15, 23, 42, 0.45) !important;
             }
         }
 
