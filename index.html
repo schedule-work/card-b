@@ -195,29 +195,31 @@
             height: 0 !important;
         }
 
-        /* 이어지는 스크롤 보기(Scroll): 월 이동 버튼/상단 제목은 의미가 없으므로 숨기고, 달마다 붙는 제목을 또렷하게 */
-        .fc.fc-scroll-mode .fc-prev-button,
-        .fc.fc-scroll-mode .fc-next-button,
-        .fc.fc-scroll-mode .fc-toolbar-title {
-            display: none !important;
+        /* PC 월 보기(끊김 없이 이어지는 주 단위 달력): 한 주의 최소 높이, 얇은 스크롤바 */
+        .fc-dayGridContinuous-view .fc-daygrid-day-frame {
+            min-height: 96px;
         }
-        .fc .fc-multimonth {
-            border: 0 !important;
+        .fc-dayGridContinuous-view .fc-scroller::-webkit-scrollbar {
+            display: block !important;
+            width: 8px !important;
         }
-        .fc .fc-multimonth-month {
-            padding: 0 0 0.75rem !important;
+        .fc-dayGridContinuous-view .fc-scroller::-webkit-scrollbar-track {
+            background: transparent;
+            margin: 8px 0;
         }
-        .fc .fc-multimonth-title {
-            padding: 0.4rem 0.25rem 0.2rem !important;
-            font-size: 0.95rem !important;
+        .fc-dayGridContinuous-view .fc-scroller::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.55);
+            border-radius: 9999px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+        .fc-dayGridContinuous-view .fc-scroller::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 0.75);
+            background-clip: content-box;
+        }
+        /* 매달 1일 칸은 "11월 1일"처럼 달이 바뀌는 지점을 알려주므로 숫자를 굵게 */
+        .fc-dayGridContinuous-view .fc-first-of-month .fc-day-num {
             font-weight: 800 !important;
-            text-align: left !important;
-            color: #0f172a;
-        }
-        @media (prefers-color-scheme: dark) {
-            .fc .fc-multimonth-title {
-                color: #f1f5f9;
-            }
         }
 
         /* 툴바 & 타이틀 */
@@ -316,10 +318,10 @@
            월 보기에만 적용한다. 하루/주 보기(시간표)의 머리글에 적용되면 머리글 칸이 17% 폭으로 줄어
            오른쪽으로 밀리고 본문 열과도 어긋난다. */
         .fc-dayGridMonth-view .fc-col-header-cell.fc-day-sun,
-        .fc-multiMonthScroll-view .fc-col-header-cell.fc-day-sun,
+        .fc-dayGridContinuous-view .fc-col-header-cell.fc-day-sun,
         .fc-daygrid-day.fc-day-sun,
         .fc-dayGridMonth-view .fc-col-header-cell.fc-day-sat,
-        .fc-multiMonthScroll-view .fc-col-header-cell.fc-day-sat,
+        .fc-dayGridContinuous-view .fc-col-header-cell.fc-day-sat,
         .fc-daygrid-day.fc-day-sat {
             width: 7.5% !important;
             min-width: 36px;
@@ -327,7 +329,7 @@
         }
 
         .fc-dayGridMonth-view .fc-col-header-cell:not(.fc-day-sun):not(.fc-day-sat),
-        .fc-multiMonthScroll-view .fc-col-header-cell:not(.fc-day-sun):not(.fc-day-sat),
+        .fc-dayGridContinuous-view .fc-col-header-cell:not(.fc-day-sun):not(.fc-day-sat),
         .fc-daygrid-day:not(.fc-day-sun):not(.fc-day-sat) {
             width: 17% !important;
         }
@@ -1971,7 +1973,11 @@ function App() {
     }
   };
   const renderDayCellContent = arg => {
-    const dayNumber = arg.dayNumberText.replace('일', '');
+    let dayNumber = arg.dayNumberText.replace('일', '');
+    // 이어지는 월 보기에서는 매달 1일에 "11월 1일"처럼 달 이름을 함께 보여준다.
+    if (arg.view.type === 'dayGridContinuous' && arg.date.getDate() === 1) {
+      dayNumber = (arg.date.getMonth() + 1) + '월 1일';
+    }
     const holidayName = getHolidayName(arg.date);
     const isToday = arg.isToday;
     const dayOfWeek = arg.date.getDay(); // 0: 일요일, 6: 토요일
@@ -1986,7 +1992,7 @@ function App() {
       }
     }
     let leftTag = null;
-    const isDayGridView = arg.view.type === 'dayGridMonth' || arg.view.type === 'dayGridWeek';
+    const isDayGridView = arg.view.type === 'dayGridMonth' || arg.view.type === 'dayGridWeek' || arg.view.type === 'dayGridContinuous';
     if (holidayName && isDayGridView) {
       const isUnavailable = holidayName === UNAVAILABLE_PERIOD_LABEL;
       const displayHolidayName = isUnavailable ? UNAVAILABLE_PERIOD_SHORT_LABEL : holidayName;
@@ -2085,9 +2091,59 @@ function App() {
         alert(reason);
       }
     };
-    // 월 보기에서 휠을 내리면 Scroll 보기로 이어서 넘어가는데, 그때 보고 있던 달('YYYY-MM')을 기억해 그 달이 맨 위에 오게 한다.
-    let pendingScrollMonth = null;
+    // ⚡ PC 월 보기: 달 구분 없이 주(week)가 세로로 끊김 없이 이어지는 하나의 달력.
+    // 스크롤하면 맨 위에 보이는 주가 속한 달로 상단 제목("2026년 10월")의 숫자만 바뀐다.
+    let currentMonthKey = null;
+    const getScroller = () => {
+      const body = calendarContainerRef.current && calendarContainerRef.current.querySelector('.fc-daygrid-body');
+      return body ? body.closest('.fc-scroller') : null;
+    };
+    const updateContinuousTitle = () => {
+      const root = calendarContainerRef.current;
+      const sc = getScroller();
+      if (!root || !sc) return;
+      const limit = sc.getBoundingClientRect().top + 8;
+      let key = null;
+      // 각 주의 목요일이 속한 달을 그 주의 달로 본다(주가 두 달에 걸쳐 있을 때 많이 걸친 쪽).
+      for (const td of root.querySelectorAll('.fc-daygrid-day[data-date]')) {
+        const ds = td.getAttribute('data-date');
+        if (new Date(ds + 'T00:00:00').getDay() !== 4) continue;
+        if (td.getBoundingClientRect().bottom > limit) {
+          key = ds.slice(0, 7);
+          break;
+        }
+      }
+      if (key) currentMonthKey = key;
+      applyContinuousTitle();
+    };
+    // FullCalendar가 툴바를 다시 그리면 기본 제목(기간 전체 표기)으로 되돌아가므로, 이어지는 월 보기에서는 항상 현재 달로 맞춘다.
+    const applyContinuousTitle = () => {
+      const root = calendarContainerRef.current;
+      if (!root || !currentMonthKey || !root.classList.contains('fc-continuous-mode')) return;
+      const titleEl = root.querySelector('.fc-toolbar-title');
+      const label = currentMonthKey.slice(0, 4) + '년 ' + Number(currentMonthKey.slice(5, 7)) + '월';
+      if (titleEl && titleEl.textContent !== label) titleEl.textContent = label;
+    };
+    const scrollToMonth = (key, smooth) => {
+      const root = calendarContainerRef.current;
+      const sc = getScroller();
+      const td = root && root.querySelector(`.fc-daygrid-day[data-date="${key}-01"]`);
+      const row = td && td.closest('tr');
+      if (!sc || !row) return false;
+      sc.scrollTo({
+        top: sc.scrollTop + row.getBoundingClientRect().top - sc.getBoundingClientRect().top,
+        behavior: smooth ? 'smooth' : 'auto'
+      });
+      return true;
+    };
+    const monthKeyOf = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    const stepMonth = delta => {
+      const base = currentMonthKey || monthKeyOf(new Date());
+      scrollToMonth(monthKeyOf(new Date(Number(base.slice(0, 4)), Number(base.slice(5, 7)) - 1 + delta, 1)), true);
+    };
     const calOptions = {
+      // PC는 처음부터 끊김 없이 이어지는 스크롤 월 보기로 열고, 모바일은 기존 월 보기를 쓴다.
+      initialView: window.innerWidth >= 640 ? 'dayGridContinuous' : 'dayGridMonth',
       height: '100%',
       expandRows: true,
       dayMaxEventRows: getDayMaxEventRows(),
@@ -2095,21 +2151,27 @@ function App() {
       scrollTime: getNowScrollTime(),
       nowIndicator: true,
       datesSet: function (info) {
-        const isScrollView = info.view.type === 'multiMonthScroll';
-        info.view.calendar.el.classList.toggle('fc-scroll-mode', isScrollView);
-        if (isScrollView) {
-          // 처음 열 때 (월 보기에서 넘어왔다면 그 달, 아니면 오늘이 있는 달)이 맨 위에 오도록 스크롤한다.
-          const targetMonth = pendingScrollMonth;
-          pendingScrollMonth = null;
+        info.view.calendar.el.classList.toggle('fc-continuous-mode', info.view.type === 'dayGridContinuous');
+        if (info.view.type === 'dayGridContinuous') {
           setTimeout(() => {
-            const root = info.view.calendar.el;
-            const scroller = root.querySelector('.fc-multimonth');
-            let month = targetMonth && root.querySelector(`.fc-multimonth-month[data-date="${targetMonth}"]`);
-            if (!month) {
-              const today = root.querySelector('.fc-day-today');
-              month = today && today.closest('.fc-multimonth-month');
+            const sc = getScroller();
+            if (!sc) return;
+            if (!sc.dataset.titleBound) {
+              sc.dataset.titleBound = '1';
+              let ticking = false;
+              sc.addEventListener('scroll', () => {
+                if (ticking) return;
+                ticking = true;
+                requestAnimationFrame(() => {
+                  ticking = false;
+                  updateContinuousTitle();
+                });
+              }, { passive: true });
+              // 처음 열 때는 이번 달의 첫 주가 맨 위에 오도록 한다.
+              currentMonthKey = null;
+              scrollToMonth(monthKeyOf(new Date()), false);
             }
-            if (scroller && month) scroller.scrollTop = month.offsetTop - scroller.offsetTop;
+            updateContinuousTitle();
           }, 60);
         }
         if (info.view.type === 'timeGridDay' || info.view.type === 'timeGridWeek') {
@@ -2138,40 +2200,55 @@ function App() {
       customButtons: {
         legend: {
           text: ''
+        },
+        // PC: 이어지는 월 보기에서는 이전/다음/오늘이 "한 달 위·아래로 스크롤"이고, 주/일 보기에서는 기존처럼 이동한다.
+        prevScroll: {
+          icon: 'chevron-left',
+          click: () => (calendar.view.type === 'dayGridContinuous' ? stepMonth(-1) : calendar.prev())
+        },
+        nextScroll: {
+          icon: 'chevron-right',
+          click: () => (calendar.view.type === 'dayGridContinuous' ? stepMonth(1) : calendar.next())
+        },
+        todayScroll: {
+          text: 'today',
+          click: () => (calendar.view.type === 'dayGridContinuous' ? scrollToMonth(monthKeyOf(new Date()), true) : calendar.today())
         }
       },
       headerToolbar: {
-        left: 'prev,next today legend',
+        left: window.innerWidth >= 640 ? 'prevScroll,nextScroll todayScroll legend' : 'prev,next today legend',
         center: 'title',
-        right: 'dayGridMonth,multiMonthScroll,timeGridWeek,timeGridDay'
+        right: window.innerWidth >= 640 ? 'dayGridContinuous,timeGridWeek,timeGridDay' : 'dayGridMonth,timeGridWeek,timeGridDay'
       },
-      // ⚡ PC용 "이어지는 스크롤" 보기: 5월(예약 가능 시작 달)부터 앞으로 몇 달을 세로로 쭉 이어 붙여 휠로 자연스럽게 넘긴다.
-      // 월 보기가 기본이며 이 보기는 툴바의 Scroll 버튼으로 전환한다(모바일에서는 툴바 우측이 숨겨져 있음).
+      // ⚡ PC용 월 보기: 5월(예약 가능 시작 달)부터 앞으로 몇 달을 주 단위로 끊김 없이 이어 붙인 하나의 달력.
       views: {
-        multiMonthScroll: {
-          type: 'multiMonth',
-          multiMonthMaxColumns: 1,
+        dayGridContinuous: {
+          type: 'dayGrid',
+          expandRows: false,
+          // 한 주의 높이(칸 너비 ÷ 비율). 기본값이면 한 주가 너무 높아 화면에 4주밖에 안 보인다.
+          aspectRatio: 2,
           fixedWeekCount: false,
-          // 한 달이 화면 높이를 넘지 않도록 가로로 넓은 비율을 준다(기본값이면 달 하나가 화면 1.5개 높이가 됨).
-          aspectRatio: 3.2,
           visibleRange: function () {
             const end = new Date();
             end.setMonth(end.getMonth() + 4, 1);
+            end.setDate(end.getDate() + ((7 - end.getDay()) % 7));
             return {
-              start: '2026-05-01',
-              end: end.getFullYear() + '-' + String(end.getMonth() + 1).padStart(2, '0') + '-01'
+              start: '2026-04-26',
+              end: end.getFullYear() + '-' + String(end.getMonth() + 1).padStart(2, '0') + '-' + String(end.getDate()).padStart(2, '0')
             };
           }
         }
       },
       buttonText: {
         month: 'Month',
-        multiMonthScroll: 'Scroll',
+        dayGridContinuous: 'Month',
         week: 'Week',
         day: 'Day'
       },
       dayCellClassNames: function (arg) {
-        return getDayCellClasses(arg.date);
+        const classes = getDayCellClasses(arg.date).slice();
+        if (arg.date.getDate() === 1) classes.push('fc-first-of-month');
+        return classes;
       },
       dayCellContent: renderDayCellContent,
       eventContent: function (arg) {
@@ -2398,6 +2475,7 @@ function App() {
     const fillLegend = () => {
       const btn = calendarContainerRef.current?.querySelector('.fc-header-toolbar .fc-legend-button');
       if (btn && !btn.querySelector('i')) btn.innerHTML = LEGEND_HTML;
+      if (typeof applyContinuousTitle === 'function') applyContinuousTitle();
     };
     const legendObserver = new MutationObserver(fillLegend);
     legendObserver.observe(calendarContainerRef.current, { childList: true, subtree: true });
@@ -2522,23 +2600,12 @@ function App() {
       swipe = null;
       if (sw.dir === 'h') finishSwipe(sw);
     };
-    // PC: 월 보기에서 휠을 굴리면 같은 달 위치에서 이어지는 Scroll 보기로 넘어가 계속 스크롤된다.
-    const onWheel = e => {
-      if (window.innerWidth < 640 || Math.abs(e.deltaY) < 4 || e.ctrlKey) return;
-      if (calendar.view.type !== 'dayGridMonth') return;
-      if (e.target.closest && e.target.closest('.fc-popover')) return;
-      const d = calendar.view.currentStart;
-      pendingScrollMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-      calendar.changeView('multiMonthScroll');
-    };
-    swipeEl.addEventListener('wheel', onWheel, { passive: true });
     swipeEl.addEventListener('touchstart', onTouchStart, { passive: true });
     swipeEl.addEventListener('touchmove', onTouchMove, { passive: true });
     swipeEl.addEventListener('touchend', onTouchEnd, { passive: true });
     swipeEl.addEventListener('touchcancel', onTouchEnd, { passive: true });
     return () => {
       legendObserver.disconnect();
-      swipeEl.removeEventListener('wheel', onWheel);
       swipeEl.removeEventListener('touchstart', onTouchStart);
       swipeEl.removeEventListener('touchmove', onTouchMove);
       swipeEl.removeEventListener('touchend', onTouchEnd);
@@ -2984,7 +3051,7 @@ function App() {
       setShowNotice(false);
       if (calendarInstanceRef.current) {
         calendarInstanceRef.current.today();
-        calendarInstanceRef.current.changeView('dayGridMonth');
+        calendarInstanceRef.current.changeView(window.innerWidth >= 640 ? 'dayGridContinuous' : 'dayGridMonth');
       }
     }
   }, "DNS : Card-Portal"), /*#__PURE__*/React.createElement("div", {
@@ -3866,7 +3933,7 @@ function App() {
     onClick: () => {
       setShowListModal(false);
       if (!calendarInstanceRef.current) return;
-      calendarInstanceRef.current.changeView('dayGridMonth');
+      calendarInstanceRef.current.changeView(window.innerWidth >= 640 ? 'dayGridContinuous' : 'dayGridMonth');
     },
     className: "flex flex-col items-center justify-center gap-0 py-0.5 text-slate-500 dark:text-slate-300"
   }, /*#__PURE__*/React.createElement("svg", {
