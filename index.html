@@ -148,6 +148,32 @@
             height: 100%;
         }
 
+        /* ⚡ 팝업/목록 안의 스크롤바: 둥근 모서리 바깥으로 튀어나오는 굵은 기본 스크롤바 대신 얇고 은은한 막대로 */
+        @supports not selector(::-webkit-scrollbar) {
+            .soft-scroll {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+            }
+        }
+        .soft-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .soft-scroll::-webkit-scrollbar-track {
+            background: transparent;
+            margin: 16px 0;
+        }
+        .soft-scroll::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.55);
+            border-radius: 9999px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+        .soft-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 0.75);
+            background-clip: content-box;
+        }
+
         /* ⚡ 캘린더 내부 스크롤바 투명화 (투박한 스크롤바 제거) */
         .fc-scroller,
         .fc-scroller-liquid-absolute {
@@ -3073,7 +3099,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("h3", {
     className: "shrink-0 font-bold mb-2 text-slate-900 dark:text-white text-sm"
   }, selectedSlot?.startDate, " 예약 목록"), selectedDateReservations.length > 0 ? /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 min-h-0 overflow-y-auto -mx-1"
+    className: "flex-1 min-h-0 overflow-y-auto soft-scroll -mx-1"
   }, selectedDateReservations.map(ev => {
     const formatTime = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     const formatDate = d => String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
@@ -3130,7 +3156,7 @@ function App() {
     onClick: () => setShowMyBookings(false),
     className: "w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 text-xl"
   }, "\xD7")), /*#__PURE__*/React.createElement("div", {
-    className: "max-h-[60vh] overflow-y-auto"
+    className: "max-h-[60vh] overflow-y-auto soft-scroll"
   }, myBookings.length === 0 ? /*#__PURE__*/React.createElement("div", {
     className: "py-14 text-center"
   }, /*#__PURE__*/React.createElement("div", {
@@ -3205,7 +3231,7 @@ function App() {
     // 제한한 뒤 창 안에서 스크롤시킨다. 어떤 화면 크기에서도 창이 화면 안에 들어오고 위·아래가 잘리지 않는다.
     className: "fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full max-h-full overflow-y-auto overscroll-contain shadow-2xl p-5 sm:p-6 border border-slate-100 dark:border-slate-700 relative"
+    className: "bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full max-h-full overflow-y-auto soft-scroll overscroll-contain shadow-2xl p-5 sm:p-6 border border-slate-100 dark:border-slate-700 relative"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex justify-between items-center mb-5"
   }, /*#__PURE__*/React.createElement("h3", {
@@ -3526,7 +3552,7 @@ function App() {
     id: "instruction-title",
     className: "text-lg font-bold text-slate-900 dark:text-white mb-4"
   }, "\uBC95\uC778\uCE74\uB4DC \uC608\uC57D \uC2DC\uC2A4\uD15C \uC774\uC6A9 \uC548\uB0B4"), /*#__PURE__*/React.createElement("div", {
-    className: "bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6 space-y-4 max-h-[60vh] overflow-y-auto"
+    className: "bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6 space-y-4 max-h-[60vh] overflow-y-auto soft-scroll"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "font-bold text-blue-600 dark:text-blue-400 mb-1"
   }, "[\uC608\uC57D \uBC0F \uC774\uC6A9]"), /*#__PURE__*/React.createElement("p", {
