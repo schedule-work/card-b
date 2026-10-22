@@ -2224,6 +2224,23 @@ function App() {
             return;
           }
         }
+        // ⚡ 3영업일 초과 장기 예약은 제한되므로(저장 시에도 같은 검사를 한다) 드래그가 끝난 시점에 미리 안내하고 창을 열지 않는다.
+        if (isRangeDrag && !userRef.current.isAdmin) {
+          const totalDays = Math.round((info.end - info.start) / 86400000);
+          const cursor = new Date(info.startStr.split('T')[0] + 'T00:00:00');
+          let businessDays = 0;
+          for (let i = 0; i < totalDays; i++) {
+            const ds = cursor.getFullYear() + '-' + String(cursor.getMonth() + 1).padStart(2, '0') + '-' + String(cursor.getDate()).padStart(2, '0');
+            if (isAvailableDate(ds)) businessDays++;
+            cursor.setDate(cursor.getDate() + 1);
+          }
+          if (businessDays > 3) {
+            alert("원활한 카드 사용을 위해 장기 예약은 최대 3일(영업일 기준)까지만 가능합니다.");
+            calendarInstanceRef.current.unselect();
+            lastSelectedRef.current = null;
+            return;
+          }
+        }
         let sDate = info.startStr.split('T')[0];
         let eDate = info.endStr && info.endStr.length === 10 ? new Date(new Date(info.endStr).getTime() - 86400000).toISOString().split('T')[0] : info.endStr.split('T')[0];
         setSelectedSlot({
