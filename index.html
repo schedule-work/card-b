@@ -1864,7 +1864,7 @@ function App() {
     if (!user) return;
     if (!calendarContainerRef.current) return;
     if (calendarInstanceRef.current) return;
-    const calendar = new FullCalendar.Calendar(calendarContainerRef.current, {
+    const calOptions = {
       height: '100%',
       expandRows: true,
       dayMaxEventRows: getDayMaxEventRows(),
@@ -2092,7 +2092,8 @@ function App() {
           openBookingById(info.event.id, info.event.start, info.event.end);
         }
       }
-    });
+    };
+    const calendar = new FullCalendar.Calendar(calendarContainerRef.current, calOptions);
     calendar.render();
     calendarInstanceRef.current = calendar;
     syncCalendarEvents();
@@ -2106,20 +2107,59 @@ function App() {
         });
       }
     }, 100);
-    // 모바일: 손가락을 따라 달력이 같이 밀리고, 충분히 밀면 이전/다음 기간으로 넘어간다. (세로 스크롤과는 방향으로 구분)
+    // 모바일: 네이버 캘린더처럼 손가락을 따라 현재 달력과 이웃 달력이 나란히 밀리고, 충분히 밀면 넘어가며 못 미치면 되돌아온다.
+    // 세로 스크롤과는 처음 움직인 방향으로 구분한다.
     const swipeEl = calendarContainerRef.current;
     swipeEl.style.touchAction = 'pan-y';
+    swipeEl.style.position = 'relative';
+    swipeEl.style.overflow = 'hidden';
+    const minDate = new Date(calOptions.validRange.start + 'T00:00:00');
     let swipe = null;
     let swipeBusy = false;
     const getHarness = () => swipeEl.querySelector('.fc-view-harness');
-    const setShift = (el, x, ms) => {
+    const move = (el, x, ms) => {
       el.style.transition = ms ? `transform ${ms}ms ease-out` : 'none';
       el.style.transform = x ? `translateX(${x}px)` : '';
+    };
+    const destroyPreview = sw => {
+      if (sw.preview) {
+        sw.preview.cal.destroy();
+        sw.preview.el.remove();
+        sw.preview = null;
+      }
+    };
+    // 이웃 기간(sign: +1 다음, -1 이전)을 같은 크기·같은 옵션으로 옆에 그려 둔다. 이전 기간이 허용 범위 밖이면 null.
+    const buildPreview = (sw, sign) => {
+      const view = calendar.view;
+      const target = sign > 0 ? new Date(view.currentEnd) : new Date(view.currentStart.getTime() - 86400000);
+      if (target < minDate) return null;
+      const box = sw.el.getBoundingClientRect();
+      const host = swipeEl.getBoundingClientRect();
+      const el = document.createElement('div');
+      el.style.cssText = `position:absolute;top:${box.top - host.top}px;left:${box.left - host.left}px;width:${box.width}px;height:${box.height}px;pointer-events:none;will-change:transform;`;
+      swipeEl.appendChild(el);
+      const cal = new FullCalendar.Calendar(el, {
+        ...calOptions,
+        headerToolbar: false,
+        initialView: view.type,
+        initialDate: target,
+        height: '100%',
+        selectable: false,
+        nowIndicator: false,
+        dateClick: undefined,
+        select: undefined,
+        eventClick: undefined,
+        datesSet: undefined,
+        windowResize: undefined,
+        events: calendar.getEvents().map(ev => ev.toPlainObject({ collapseExtendedProps: false }))
+      });
+      cal.render();
+      return { el, cal, sign };
     };
     const onTouchStart = e => {
       const el = getHarness();
       if (swipeBusy || !el || window.innerWidth >= 640 || e.touches.length !== 1) { swipe = null; return; }
-      swipe = { x: e.touches[0].clientX, y: e.touches[0].clientY, dir: null, el };
+      swipe = { x: e.touches[0].clientX, y: e.touches[0].clientY, dir: null, el, preview: null };
     };
     const onTouchMove = e => {
       if (!swipe) return;
@@ -2129,43 +2169,55 @@ function App() {
         if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
         swipe.dir = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v';
       }
-      if (swipe.dir === 'h') setShift(swipe.el, dx, 0);
+      if (swipe.dir !== 'h') return;
+      const sign = dx < 0 ? 1 : -1;
+      if (swipe.preview && swipe.preview.sign !== sign) destroyPreview(swipe);
+      if (!swipe.preview && !(swipe.failedSign === sign)) {
+        swipe.preview = buildPreview(swipe, sign);
+        if (!swipe.preview) swipe.failedSign = sign;
+      }
+      const w = swipe.el.offsetWidth;
+      // 이웃 기간이 없는 방향(범위 밖)은 고무줄처럼 살짝만 따라온다.
+      const shift = swipe.preview ? dx : dx * 0.25;
+      move(swipe.el, shift, 0);
+      if (swipe.preview) move(swipe.preview.el, shift + sign * w, 0);
     };
-    const onTouchEnd = e => {
-      if (!swipe) return;
-      const { el, dir } = swipe;
-      swipe = null;
-      if (dir !== 'h') return;
+    const finishSwipe = sw => {
+      const { el, preview } = sw;
+      const w = el.offsetWidth;
       const shift = new DOMMatrix(getComputedStyle(el).transform).m41;
-      const w = swipeEl.clientWidth || window.innerWidth;
-      if (Math.abs(shift) < Math.min(80, w * 0.25)) {
-        setShift(el, 0, 180);
+      if (!preview || Math.abs(shift) < Math.min(90, w * 0.3)) {
+        move(el, 0, 200);
+        if (preview) move(preview.el, preview.sign * w, 200);
+        setTimeout(() => destroyPreview(sw), 210);
         return;
       }
-      const sign = shift < 0 ? -1 : 1;
+      const sign = preview.sign;
       swipeBusy = true;
-      setShift(el, sign * w, 160);
+      move(el, -sign * w, 200);
+      move(preview.el, 0, 200);
       setTimeout(() => {
-        if (sign < 0) calendar.next(); else calendar.prev();
-        setShift(el, -sign * w, 0);
-        void el.offsetWidth;
-        setShift(el, 0, 200);
-        setTimeout(() => { swipeBusy = false; }, 200);
-      }, 160);
+        if (sign > 0) calendar.next(); else calendar.prev();
+        move(el, 0, 0);
+        destroyPreview(sw);
+        swipeBusy = false;
+      }, 210);
     };
-    const onTouchCancel = () => {
-      if (swipe && swipe.dir === 'h') setShift(swipe.el, 0, 180);
+    const onTouchEnd = () => {
+      if (!swipe) return;
+      const sw = swipe;
       swipe = null;
+      if (sw.dir === 'h') finishSwipe(sw);
     };
     swipeEl.addEventListener('touchstart', onTouchStart, { passive: true });
     swipeEl.addEventListener('touchmove', onTouchMove, { passive: true });
     swipeEl.addEventListener('touchend', onTouchEnd, { passive: true });
-    swipeEl.addEventListener('touchcancel', onTouchCancel, { passive: true });
+    swipeEl.addEventListener('touchcancel', onTouchEnd, { passive: true });
     return () => {
       swipeEl.removeEventListener('touchstart', onTouchStart);
       swipeEl.removeEventListener('touchmove', onTouchMove);
       swipeEl.removeEventListener('touchend', onTouchEnd);
-      swipeEl.removeEventListener('touchcancel', onTouchCancel);
+      swipeEl.removeEventListener('touchcancel', onTouchEnd);
       if (calendarInstanceRef.current) {
         calendarInstanceRef.current.destroy();
         calendarInstanceRef.current = null;
@@ -3090,6 +3142,7 @@ function App() {
     required: true,
     value: formData.startDate,
     onChange: e => handleStartDateChange(e.target.value),
+    onClick: e => { try { e.currentTarget.showPicker && e.currentTarget.showPicker(); } catch (_) {} },
     className: "absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
   })), /*#__PURE__*/React.createElement("select", {
     disabled: !hasPermission,
@@ -3116,6 +3169,7 @@ function App() {
     disabled: !hasPermission,
     required: true,
     value: formData.endDate,
+    onClick: e => { try { e.currentTarget.showPicker && e.currentTarget.showPicker(); } catch (_) {} },
     onChange: e => setFormData({
       ...formData,
       endDate: e.target.value
