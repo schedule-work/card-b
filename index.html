@@ -182,13 +182,13 @@
         }
         @media (min-width: 640px) {
             .fc .fc-legend-button { display: inline-flex !important; align-items: center; }
-            /* 범례가 왼쪽 묶음을 넓혀도 월 제목(가운데)이 밀리지 않도록 툴바 정중앙에 고정 */
-            .fc .fc-header-toolbar { position: relative; }
-            .fc .fc-header-toolbar > .fc-toolbar-chunk:nth-child(2) {
-                position: absolute;
-                left: 50%;
-                transform: translateX(-50%);
-            }
+        }
+        /* 범례/숨김 버튼 때문에 양쪽 묶음 너비가 달라도 월 제목이 밀리지 않도록 툴바 정중앙에 고정 (PC·모바일 공통) */
+        .fc .fc-header-toolbar { position: relative; }
+        .fc .fc-header-toolbar > .fc-toolbar-chunk:nth-child(2) {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
         }
         .fc .fc-toolbar {
             margin-bottom: 0.85rem !important;
@@ -516,9 +516,8 @@
                 padding: 0.25rem 0 !important;
             }
 
-            /* 모바일: 달력을 최대한 크게 — 보기 전환 버튼은 숨기고(하단 메뉴로 전환 가능) 제목은 버튼 옆에 붙인다 */
+            /* 모바일: 달력을 최대한 크게 — 보기 전환 버튼은 숨긴다(하단 메뉴로 전환 가능) */
             .fc .fc-header-toolbar {
-                justify-content: flex-start !important;
                 gap: 0.5rem !important;
                 margin-bottom: 0.2rem !important;
             }
@@ -2188,12 +2187,11 @@ function App() {
       const view = calendar.view;
       const target = sign > 0 ? new Date(view.currentEnd) : new Date(view.currentStart.getTime() - 86400000);
       if (target < minDate) return null;
-      // .fc 루트는 패딩/테두리를 갖고 있어서(툴바 + 본문이 그 안에 배치됨) 본문(harness)만 기준으로 맞추면 이웃 달력이 그만큼 아래로 밀려 보인다.
-      // 그래서 .fc 루트와 같은 크기·위치에 같은 구조(툴바는 투명하게 자리만 차지)로 그린다.
-      const box = swipeEl.querySelector('.fc').getBoundingClientRect();
-      const host = swipeEl.getBoundingClientRect();
+      // FullCalendar는 컨테이너 요소 자체에 .fc 클래스를 붙이고, 이 요소가 패딩/테두리를 갖는다(툴바 + 본문이 그 안에 배치됨).
+      // 본문(harness) 크기로 맞추면 이웃 달력이 패딩만큼 아래로 밀려 보이므로, 실제 달력 컨테이너와 같은 테두리 박스 크기·위치에 같은 구조로 그린다.
+      // 툴바는 투명하게 자리만 차지한다.
       const el = document.createElement('div');
-      el.style.cssText = `position:absolute;top:${box.top - host.top}px;left:${box.left - host.left}px;width:${box.width}px;height:${box.height}px;pointer-events:none;will-change:transform;`;
+      el.style.cssText = `position:absolute;top:${-swipeEl.clientTop}px;left:${-swipeEl.clientLeft}px;width:${swipeEl.offsetWidth}px;height:${swipeEl.offsetHeight}px;pointer-events:none;will-change:transform;`.replace(/\n/g, '');
       swipeEl.appendChild(el);
       const cal = new FullCalendar.Calendar(el, {
         ...calOptions,
@@ -2210,8 +2208,9 @@ function App() {
         events: calendar.getEvents().map(ev => ev.toPlainObject({ collapseExtendedProps: false }))
       });
       cal.render();
-      const root = el.querySelector('.fc');
-      ['background', 'border', 'box-shadow'].forEach(k => root.style.setProperty(k, k === 'background' ? 'transparent' : 'none', 'important'));
+      el.style.setProperty('background', 'transparent', 'important');
+      el.style.setProperty('border-color', 'transparent', 'important');
+      el.style.setProperty('box-shadow', 'none', 'important');
       const bar = el.querySelector('.fc-header-toolbar');
       if (bar) bar.style.visibility = 'hidden';
       return { el, cal, sign };
@@ -3634,7 +3633,7 @@ function App() {
   }, myBookings.length), /*#__PURE__*/React.createElement("span", {
     className: "text-[10px] font-medium"
   }, "Me")))), /*#__PURE__*/React.createElement("div", {
-    className: "absolute bottom-14 sm:bottom-3 right-3 sm:right-4 z-[40] text-right pointer-events-none opacity-80 select-none"
+    className: "hidden sm:block absolute sm:bottom-3 right-3 sm:right-4 z-[40] text-right pointer-events-none opacity-80 select-none"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] font-medium text-slate-400 dark:text-slate-500"
   }, "\xA9 vico.yj All rights reserved. ", /*#__PURE__*/React.createElement("span", {
