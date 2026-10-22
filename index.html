@@ -2106,27 +2106,66 @@ function App() {
         });
       }
     }, 100);
-    // 모바일: 달력을 가로로 스와이프하면 이전/다음 기간으로 이동 (세로 스크롤과 구분하기 위해 가로 변위가 확실히 클 때만)
+    // 모바일: 손가락을 따라 달력이 같이 밀리고, 충분히 밀면 이전/다음 기간으로 넘어간다. (세로 스크롤과는 방향으로 구분)
     const swipeEl = calendarContainerRef.current;
-    let swipeStart = null;
+    swipeEl.style.touchAction = 'pan-y';
+    let swipe = null;
+    let swipeBusy = false;
+    const getHarness = () => swipeEl.querySelector('.fc-view-harness');
+    const setShift = (el, x, ms) => {
+      el.style.transition = ms ? `transform ${ms}ms ease-out` : 'none';
+      el.style.transform = x ? `translateX(${x}px)` : '';
+    };
     const onTouchStart = e => {
-      if (window.innerWidth >= 640 || e.touches.length !== 1) { swipeStart = null; return; }
-      swipeStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      const el = getHarness();
+      if (swipeBusy || !el || window.innerWidth >= 640 || e.touches.length !== 1) { swipe = null; return; }
+      swipe = { x: e.touches[0].clientX, y: e.touches[0].clientY, dir: null, el };
+    };
+    const onTouchMove = e => {
+      if (!swipe) return;
+      const dx = e.touches[0].clientX - swipe.x;
+      const dy = e.touches[0].clientY - swipe.y;
+      if (!swipe.dir) {
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+        swipe.dir = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v';
+      }
+      if (swipe.dir === 'h') setShift(swipe.el, dx, 0);
     };
     const onTouchEnd = e => {
-      if (!swipeStart) return;
-      const t = e.changedTouches[0];
-      const dx = t.clientX - swipeStart.x;
-      const dy = t.clientY - swipeStart.y;
-      swipeStart = null;
-      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-      if (dx < 0) calendar.next(); else calendar.prev();
+      if (!swipe) return;
+      const { el, dir } = swipe;
+      swipe = null;
+      if (dir !== 'h') return;
+      const shift = new DOMMatrix(getComputedStyle(el).transform).m41;
+      const w = swipeEl.clientWidth || window.innerWidth;
+      if (Math.abs(shift) < Math.min(80, w * 0.25)) {
+        setShift(el, 0, 180);
+        return;
+      }
+      const sign = shift < 0 ? -1 : 1;
+      swipeBusy = true;
+      setShift(el, sign * w, 160);
+      setTimeout(() => {
+        if (sign < 0) calendar.next(); else calendar.prev();
+        setShift(el, -sign * w, 0);
+        void el.offsetWidth;
+        setShift(el, 0, 200);
+        setTimeout(() => { swipeBusy = false; }, 200);
+      }, 160);
+    };
+    const onTouchCancel = () => {
+      if (swipe && swipe.dir === 'h') setShift(swipe.el, 0, 180);
+      swipe = null;
     };
     swipeEl.addEventListener('touchstart', onTouchStart, { passive: true });
+    swipeEl.addEventListener('touchmove', onTouchMove, { passive: true });
     swipeEl.addEventListener('touchend', onTouchEnd, { passive: true });
+    swipeEl.addEventListener('touchcancel', onTouchCancel, { passive: true });
     return () => {
       swipeEl.removeEventListener('touchstart', onTouchStart);
+      swipeEl.removeEventListener('touchmove', onTouchMove);
       swipeEl.removeEventListener('touchend', onTouchEnd);
+      swipeEl.removeEventListener('touchcancel', onTouchCancel);
       if (calendarInstanceRef.current) {
         calendarInstanceRef.current.destroy();
         calendarInstanceRef.current = null;
