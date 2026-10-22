@@ -3041,14 +3041,18 @@ function App() {
     className: "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1"
   }, "\uB300\uC5EC \uC2DC\uC791\uC77C \uBC0F \uC2DC\uAC04"), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-[minmax(0,1fr)_minmax(0,4.5rem)] gap-2"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative flex items-center justify-center min-w-0 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-[13px] sm:text-sm focus-within:border-blue-600 dark:focus-within:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pointer-events-none"
+  }, (formData.startDate || "").replace(/-/g, ". ") + (formData.startDate ? "." : "")), /*#__PURE__*/React.createElement("input", {
     type: "date",
     disabled: !hasPermission,
     required: true,
     value: formData.startDate,
     onChange: e => handleStartDateChange(e.target.value),
-    className: "w-full min-w-0 px-1.5 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-[13px] sm:text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
-  }), /*#__PURE__*/React.createElement("select", {
+    className: "absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
+  })), /*#__PURE__*/React.createElement("select", {
     disabled: !hasPermission,
     required: true,
     value: formData.startTimePart,
@@ -3064,7 +3068,11 @@ function App() {
     className: "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1"
   }, "\uBC18\uB0A9 \uC608\uC815\uC77C \uBC0F \uC2DC\uAC04"), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-[minmax(0,1fr)_minmax(0,4.5rem)] gap-2"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative flex items-center justify-center min-w-0 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-[13px] sm:text-sm focus-within:border-blue-600 dark:focus-within:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pointer-events-none"
+  }, (formData.endDate || "").replace(/-/g, ". ") + (formData.endDate ? "." : "")), /*#__PURE__*/React.createElement("input", {
     type: "date",
     disabled: !hasPermission,
     required: true,
@@ -3073,8 +3081,8 @@ function App() {
       ...formData,
       endDate: e.target.value
     }),
-    className: "w-full min-w-0 px-1.5 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-[13px] sm:text-sm focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-500 transition-colors"
-  }), /*#__PURE__*/React.createElement("select", {
+    className: "absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
+  })), /*#__PURE__*/React.createElement("select", {
     disabled: !hasPermission,
     required: true,
     value: formData.endTimePart,
