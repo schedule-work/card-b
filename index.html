@@ -2133,14 +2133,15 @@ function App() {
       const view = calendar.view;
       const target = sign > 0 ? new Date(view.currentEnd) : new Date(view.currentStart.getTime() - 86400000);
       if (target < minDate) return null;
-      const box = sw.el.getBoundingClientRect();
+      // .fc 루트는 패딩/테두리를 갖고 있어서(툴바 + 본문이 그 안에 배치됨) 본문(harness)만 기준으로 맞추면 이웃 달력이 그만큼 아래로 밀려 보인다.
+      // 그래서 .fc 루트와 같은 크기·위치에 같은 구조(툴바는 투명하게 자리만 차지)로 그린다.
+      const box = swipeEl.querySelector('.fc').getBoundingClientRect();
       const host = swipeEl.getBoundingClientRect();
       const el = document.createElement('div');
       el.style.cssText = `position:absolute;top:${box.top - host.top}px;left:${box.left - host.left}px;width:${box.width}px;height:${box.height}px;pointer-events:none;will-change:transform;`;
       swipeEl.appendChild(el);
       const cal = new FullCalendar.Calendar(el, {
         ...calOptions,
-        headerToolbar: false,
         initialView: view.type,
         initialDate: target,
         height: '100%',
@@ -2154,6 +2155,10 @@ function App() {
         events: calendar.getEvents().map(ev => ev.toPlainObject({ collapseExtendedProps: false }))
       });
       cal.render();
+      const root = el.querySelector('.fc');
+      ['background', 'border', 'box-shadow'].forEach(k => root.style.setProperty(k, k === 'background' ? 'transparent' : 'none', 'important'));
+      const bar = el.querySelector('.fc-header-toolbar');
+      if (bar) bar.style.visibility = 'hidden';
       return { el, cal, sign };
     };
     const onTouchStart = e => {
