@@ -2618,6 +2618,28 @@ function App() {
   // ---------------------------------------------------------
   // ⭐ 1 & 2. 비로그인 (메인 로그인 화면) 영역 + DotField 배경
   // ---------------------------------------------------------
+  // 로그인 화면과 메인 화면이 함께 쓰는 로딩 표시: 칸(카드) 없이 화면 전체를 블러 처리하고 애니메이션만 보여준다.
+  const loadingOverlay = loading ? /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-md flex flex-col items-center justify-center gap-3 z-[9999] select-none",
+    role: "status",
+    "aria-live": "polite"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "typing-indicator scale-90"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "typing-circle"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "typing-circle"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "typing-circle"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "typing-shadow"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "typing-shadow"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "typing-shadow"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-white drop-shadow"
+  }, "\uCC98\uB9AC \uC911\uC785\uB2C8\uB2E4...")) : null;
   if (!user) {
     return /*#__PURE__*/React.createElement("div", {
       className: "relative h-dvh w-full flex items-center justify-center bg-gradient-to-br from-blue-50/60 via-slate-50 to-indigo-50/40 dark:from-[#070d18] dark:via-[#0b1120] dark:to-[#111827] px-4 transition-colors duration-200 overflow-hidden"
@@ -2721,7 +2743,7 @@ function App() {
       className: "text-[10px] font-medium text-slate-400 dark:text-slate-500"
     }, "\xA9 vico.yj All rights reserved. ", /*#__PURE__*/React.createElement("span", {
       className: "mx-1 text-slate-300 dark:text-slate-600"
-    }, "|"), " codeyj@duck.com")));
+    }, "|"), " codeyj@duck.com")), loadingOverlay);
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "relative h-dvh flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200 overflow-x-hidden overflow-hidden"
@@ -3008,27 +3030,7 @@ function App() {
       }
     },
     className: "flex-[2] bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl shadow-md font-medium transition text-sm"
-  }, "+ 신규 예약")))), loading && /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-0 bg-black/30 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white/95 dark:bg-slate-800/95 px-8 py-6 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col items-center gap-3 select-none"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "typing-indicator scale-90"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "typing-circle"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "typing-circle"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "typing-circle"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "typing-shadow"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "typing-shadow"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "typing-shadow"
-  })), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-slate-700 dark:text-slate-200"
-  }, "\uCC98\uB9AC \uC911\uC785\uB2C8\uB2E4...")))), showMyBookings && /*#__PURE__*/React.createElement("div", {
+  }, "+ 신규 예약")))), loadingOverlay), showMyBookings && /*#__PURE__*/React.createElement("div", {
     role: "dialog",
     "aria-modal": "true",
     "aria-labelledby": "my-bookings-title",
