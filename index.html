@@ -1515,7 +1515,8 @@ function App() {
     const savedUser = sessionStorage.getItem('cardPortalUser');
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
-      return !parsedUser.isAdmin;
+      // 관리자 계정(PIN 인증 전인 관리자 후보 포함)은 안내사항 확인 없이 바로 캘린더를 보여준다.
+      return !(parsedUser.isAdmin || parsedUser.canAdminAuth);
     }
     return false;
   });
@@ -1808,7 +1809,7 @@ function App() {
       };
       setUser(loggedInUser);
       sessionStorage.setItem('cardPortalUser', JSON.stringify(loggedInUser));
-      if (!loggedInUser.isAdmin) setShowInstruction(true);
+      if (!(loggedInUser.isAdmin || loggedInUser.canAdminAuth)) setShowInstruction(true);
     } catch (e) {
       alert(e.message);
     } finally {
