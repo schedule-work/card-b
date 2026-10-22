@@ -795,6 +795,14 @@
             }
         }
 
+        /* 다크 모드: 일/토 요일 머리글 칸이 라이트 모드용 밝은 회색 배경으로 남지 않게 한다 */
+        @media (prefers-color-scheme: dark) {
+            .fc-col-header-cell.fc-day-sun,
+            .fc-col-header-cell.fc-day-sat {
+                background-color: rgba(15, 23, 42, 0.45) !important;
+            }
+        }
+
         @media (min-width: 640px) and (prefers-color-scheme: dark) {
             .fc .fc-button-active,
             .fc .fc-button-primary:not(:disabled).fc-button-active {
@@ -2687,7 +2695,7 @@ function App() {
   // ---------------------------------------------------------
   // 로그인 화면과 메인 화면이 함께 쓰는 로딩 표시: 칸(카드) 없이 화면 전체를 블러 처리하고 애니메이션만 보여준다.
   const loadingOverlay = loading ? /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-md flex flex-col items-center justify-center gap-3 z-[9999] select-none",
+    className: "fixed inset-0 bg-white/55 dark:bg-slate-900/55 backdrop-blur-md flex flex-col items-center justify-center gap-3 z-[9999] select-none",
     role: "status",
     "aria-live": "polite"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2705,7 +2713,7 @@ function App() {
   }), /*#__PURE__*/React.createElement("div", {
     className: "typing-shadow"
   })), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-white drop-shadow"
+    className: "text-xs font-bold text-slate-600 dark:text-slate-200"
   }, "\uCC98\uB9AC \uC911\uC785\uB2C8\uB2E4...")) : null;
   if (!user) {
     return /*#__PURE__*/React.createElement("div", {
