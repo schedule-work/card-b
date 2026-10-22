@@ -1528,6 +1528,7 @@ function App() {
   // 재생성하지 않음), select/eventClick 콜백 안에서는 항상 최신 user 값을 보도록 ref로 참조한다.
   const userRef = React.useRef(user);
   userRef.current = user;
+  const adminAuthRef = React.useRef(null);
   const [dismissedNotice, setDismissedNotice] = React.useState(() => {
     try {
       return sessionStorage.getItem('dismissedNotice') || '';
@@ -1869,6 +1870,7 @@ function App() {
       setLoading(false);
     }
   };
+  adminAuthRef.current = handleAdminAuth;
   const openAnnouncementEditor = () => {
     setAnnouncementDraft({
       text: notice.text || '',
@@ -2037,6 +2039,17 @@ function App() {
     if (!user) return;
     if (!calendarContainerRef.current) return;
     if (calendarInstanceRef.current) return;
+    // 관리자만 예외로 허용되는 제한(지난 날짜·2개월 초과·주말/공휴일·3영업일 초과)에 걸렸을 때:
+    // 관리자 후보 계정(인증 전)이면 인증을 안내하고, 그 외 사용자에게는 제한 사유만 보여준다.
+    const explainRestriction = async reason => {
+      const u = userRef.current;
+      if (u.canAdminAuth && !u.isAdmin) {
+        const ok = await confirm(reason + '\n\n관리자 인증을 하면 가능합니다. 지금 관리자 인증을 진행할까요?');
+        if (ok) adminAuthRef.current?.();
+      } else {
+        alert(reason);
+      }
+    };
     const calOptions = {
       height: '100%',
       expandRows: true,
@@ -2155,11 +2168,11 @@ function App() {
           // 지난 날짜는 팝업 없이 예약 내역만 보여준다(신규 예약 버튼은 목록 화면에서 숨김).
           if (clickedDate >= today) {
             if (clickedDate > maxSelectDate) {
-              alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
+              explainRestriction("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
               return;
             }
             if (!isAvailableDate(sDate)) {
-              alert("⚠️ 주말 및 공휴일은 예약할 수 없습니다.");
+              explainRestriction("⚠️ 주말 및 공휴일은 예약할 수 없습니다.");
               return;
             }
           }
@@ -2206,19 +2219,21 @@ function App() {
         const selectStart = new Date(info.startStr + "T00:00:00");
         if (!userRef.current.isAdmin) {
           if (selectStart < today) {
-            // 데스크톱은 예약 막대를 바로 눌러 볼 수 있으므로 팝업 없이 선택만 해제한다.
+            // 데스크톱은 예약 막대를 바로 눌러 볼 수 있으므로 일반 사용자에게는 팝업 없이 선택만 해제한다.
+            // 관리자 후보 계정에게만 인증하면 가능하다고 안내한다.
+            if (userRef.current.canAdminAuth) explainRestriction("⚠️ 지난 날짜는 예약할 수 없습니다.");
             calendarInstanceRef.current.unselect();
             lastSelectedRef.current = null;
             return;
           }
           if (selectStart > maxSelectDate) {
-            alert("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
+            explainRestriction("⚠️ 예약은 2개월 이내의 날짜만 신청 가능합니다.");
             calendarInstanceRef.current.unselect();
             lastSelectedRef.current = null;
             return;
           }
           if (!isAvailableDate(info.startStr.split('T')[0])) {
-            alert("⚠️ 주말 및 공휴일은 예약할 수 없습니다.");
+            explainRestriction("⚠️ 주말 및 공휴일은 예약할 수 없습니다.");
             calendarInstanceRef.current.unselect();
             lastSelectedRef.current = null;
             return;
@@ -2235,7 +2250,7 @@ function App() {
             cursor.setDate(cursor.getDate() + 1);
           }
           if (businessDays > 3) {
-            alert("원활한 카드 사용을 위해 장기 예약은 최대 3일(영업일 기준)까지만 가능합니다.");
+            explainRestriction("원활한 카드 사용을 위해 장기 예약은 최대 3일(영업일 기준)까지만 가능합니다.");
             calendarInstanceRef.current.unselect();
             lastSelectedRef.current = null;
             return;
@@ -2721,12 +2736,14 @@ function App() {
   const hasPermission = React.useMemo(() => !selectedEvent || selectedEvent.canEdit === true, [selectedEvent]);
   const handleLogout = async () => {
     const token = user?.token;
+    setLoading(true);
     try {
       if (token) await callApi({
         action: 'LOGOUT',
         token
       });
     } catch (e) {} finally {
+      setLoading(false);
       setUser(null);
       sessionStorage.removeItem('cardPortalUser');
       setSelectedEvent(null);
